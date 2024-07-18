@@ -1,0 +1,49 @@
+﻿@using ExpertCenter.MvcApp.Models.PriceList
+@model PriceListCreateModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>PriceList</h4>
+<hr />
+<div class="row">
+    <div class="">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" placeholder="Прайс лист от 22.05.2024" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Products" class="control-label"></label>
+                <button id="addProduct" type="button" class="btn btn-warning">Добавить товар</button>
+                <div id="products" class="row">
+                    <div id="patternProduct" class="d-none">
+                        @await Html.PartialAsync("_PriceListProductCreate")
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        $('#addProduct').click(() => {
+            $('#products').append($('#patternProduct').html());
+        });
+    </script>
+}

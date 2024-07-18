@@ -1,0 +1,41 @@
+﻿@using ExpertCenter.MvcApp.Models.Product
+
+@model ProductCreateModel
+
+<div class="col-12 d-flex">
+    <div class="col-2">
+        <div class="form-group">
+            <label asp-for="Name" class="control-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="Продукт #1" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-2">
+        <div class="form-group">
+            <label asp-for="Article" class="control-label"></label>
+            <input asp-for="Article" class="form-control" placeholder="123456" />
+            <span asp-validation-for="Article" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-2">
+        <div class="form-group">
+            <label asp-for="Description" class="control-label"></label>
+            <input asp-for="Description" class="form-control" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-2">
+        <div class="form-group">
+            <label asp-for="KeyWords" class="control-label"></label>
+            <input asp-for="KeyWords" class="form-control" />
+            <span asp-validation-for="KeyWords" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="col-2">
+        <div class="form-group">
+            <label asp-for="Price" class="control-label"></label>
+            <input asp-for="Price" class="form-control" placeholder="99.99" />
+            <span asp-validation-for="Price" class="text-danger"></span>
+        </div>
+    </div>
+</div>
