@@ -8,6 +8,6 @@ public class PriceListCreateModel
     [MaxLength(100, ErrorMessage = "Максимальная длина 100 символов")]
     [Display(Name = "Название")]
     public string Name { get; set; } = null!;
-    [Display(Name = "Продукты")]
-    public ICollection<ProductCreateModel> Products { get; set; } = [];
+    [Display(Name = "Колонки")]
+    public ICollection<ColumnCreateModel> Columns { get; set; } = [];
 }

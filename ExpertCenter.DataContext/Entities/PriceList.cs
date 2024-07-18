@@ -8,5 +8,6 @@ public class PriceList
     [Column(TypeName = "varchar(100)")]
     public string Name { get; set; } = null!;
 
+    public ICollection<ColumnType> Columns { get; set; } = [];
     public ICollection<Product> Products { get; set; } = [];
 }

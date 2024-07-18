@@ -1,41 +1,38 @@
 ﻿@using ExpertCenter.MvcApp.Models.Product
 
-@model ProductCreateModel
+@model ColumnCreateModel
 
-<div class="col-12 d-flex">
-    <div class="col-2">
+<li class="row row-cols-4 align-items-center column p-2 m-1 border-warning border rounded">
+    <div class="number col-auto">
+    </div>
+    <div class="col-4">
         <div class="form-group">
-            <label asp-for="Name" class="control-label"></label>
-            <input asp-for="Name" class="form-control" placeholder="Продукт #1" />
-            <span asp-validation-for="Name" class="text-danger"></span>
+            <input asp-for="ColumnName" class="form-control" placeholder="Название колонки" autocomplete="off" />
+            <span asp-validation-for="ColumnName" class="text-danger"></span>
         </div>
     </div>
     <div class="col-2">
         <div class="form-group">
-            <label asp-for="Article" class="control-label"></label>
-            <input asp-for="Article" class="form-control" placeholder="123456" />
-            <span asp-validation-for="Article" class="text-danger"></span>
+            <input asp-for="ColumnType" class="form-control" value="@ViewBag.ColumnTypes[0].Value" hidden />
+            <div class="dropdown column-type-selector">
+                <button class="btn btn-light dropdown-toggle w-100 column-type-selector-button"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    @ViewBag.ColumnTypes[0].Text
+                </button>
+                <ul class="dropdown-menu">
+                    @foreach (var columnType in ViewBag.ColumnTypes)
+                    {
+                        <li><button type="button"
+                                    class="dropdown-item"
+                                    value="@columnType.Value">@columnType.Text</button></li>
+                    }
+                </ul>
+            </div>
         </div>
     </div>
-    <div class="col-2">
-        <div class="form-group">
-            <label asp-for="Description" class="control-label"></label>
-            <input asp-for="Description" class="form-control" />
-            <span asp-validation-for="Description" class="text-danger"></span>
-        </div>
+    <div class="col-auto">
+        <button class="btn btn-danger w-100 delete-column" type="button">Удалить</button>
     </div>
-    <div class="col-2">
-        <div class="form-group">
-            <label asp-for="KeyWords" class="control-label"></label>
-            <input asp-for="KeyWords" class="form-control" />
-            <span asp-validation-for="KeyWords" class="text-danger"></span>
-        </div>
-    </div>
-    <div class="col-2">
-        <div class="form-group">
-            <label asp-for="Price" class="control-label"></label>
-            <input asp-for="Price" class="form-control" placeholder="99.99" />
-            <span asp-validation-for="Price" class="text-danger"></span>
-        </div>
-    </div>
-</div>
+</li>

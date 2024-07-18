@@ -1,41 +1,37 @@
 ﻿@using ExpertCenter.MvcApp.Models.PriceList
+@using ExpertCenter.MvcApp.Models.Product
 @model PriceListCreateModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Прайс-лист \u2014 Создание";
 }
 
-<h1>Create</h1>
-
-<h4>PriceList</h4>
+<h3>Новый прайс-лист</h3>
 <hr />
-<div class="row">
-    <div class="">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" placeholder="Прайс лист от 22.05.2024" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Products" class="control-label"></label>
-                <button id="addProduct" type="button" class="btn btn-warning">Добавить товар</button>
-                <div id="products" class="row">
-                    <div id="patternProduct" class="d-none">
-                        @await Html.PartialAsync("_PriceListProductCreate")
-                    </div>
+<div class="d-inline">
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group">
+            <label asp-for="Name" class="control-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="Прайс лист от 22.05.2024" autocomplete="off" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="form-group mt-3">
+            <label asp-for="Columns" class="control-label"></label>
+            <button id="addProduct" type="button" class="btn btn-warning ms-3">Добавить</button>
+            <div class="gap-2 my-3">
+                <div id="patternProduct" class="d-none">
+                    @await Html.PartialAsync("_PriceListProductCreate")
                 </div>
+                <ol id="columns" class="d-flex flex-column flex-column-reverse">
+                </ol>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <a asp-action="Index">Обратно к прайс-листам</a>
+            <input type="submit" value="Продолжить" class="btn btn-success" />
+        </div>
+    </form>
 </div>
 
 @section Scripts {
@@ -43,7 +39,36 @@
 
     <script>
         $('#addProduct').click(() => {
-            $('#products').append($('#patternProduct').html());
+            let newElem = $('#patternProduct').html();
+            $('#columns').append(newElem);
+
+            $('#columns .number').each(function (index) {
+                var reversedIndex = $('#columns .number').length - index;
+                $(this).text(reversedIndex + ".");
+            });
         });
+
+        $('#columns').on('click', '.delete-column', function() {
+            $(this).closest('li').remove();
+
+
+            $('#columns .number').each(function (index) {
+                var reversedIndex = $('#columns .number').length - index;
+                $(this).text(reversedIndex + ".");
+            });
+        });
+
+        $('#columns').on('click', '.dropdown-item', function () {
+            var dropdownButton = $(this).closest('.dropdown').find('.column-type-selector-button');
+            var hiddenInput = $(this).closest('.form-group').find('input');
+
+            dropdownButton.text($(this).text());
+            hiddenInput.attr('value', $(this).attr('value'));
+        });
+
+        $('.dropdown-menu').on('click', '.dropdown-item', function () {
+            console.log('ALFKDLF');
+            $(this).closest('.column-type-selector-button').text($('.dropdown-item').text());
+        })
     </script>
 }

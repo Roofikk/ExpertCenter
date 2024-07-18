@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ExpertCenter.DataContext;
@@ -46,6 +42,25 @@ namespace ExpertCenter.MvcApp.Controllers
         // GET: PriceLists/Create
         public IActionResult Create()
         {
+            ViewBag.ColumnTypes = new List<SelectListItem>
+            {
+                new SelectListItem
+                {
+                    Text = "Числовой",
+                    Value = nameof(IntColumn)
+                },
+                new SelectListItem
+                {
+                    Text = "Однострочный",
+                    Value = nameof(VarCharColumn)
+                },
+                new SelectListItem
+                {
+                    Text = "Многострочный",
+                    Value = nameof(StringTextColumn)
+                }
+            };
+
             return View();
         }
 
