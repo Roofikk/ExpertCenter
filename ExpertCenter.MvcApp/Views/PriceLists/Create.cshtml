@@ -38,24 +38,33 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 
     <script>
+        let index = 0;
+
         $('#addProduct').click(() => {
-            let newElem = $('#patternProduct').html();
-            $('#columns').append(newElem);
+            let newElem = $('#patternProduct').clone();
+
+            newElem.find('input[name="ColumnName"]').attr('name', `Columns[${index}].ColumnName`);
+            newElem.find('input[name="ColumnType"]').attr('name', `Columns[${index}].ColumnType`);
+
+            $('#columns').append(newElem.html());
 
             $('#columns .number').each(function (index) {
                 var reversedIndex = $('#columns .number').length - index;
                 $(this).text(reversedIndex + ".");
             });
+
+            index++;
         });
 
         $('#columns').on('click', '.delete-column', function() {
             $(this).closest('li').remove();
 
-
             $('#columns .number').each(function (index) {
                 var reversedIndex = $('#columns .number').length - index;
                 $(this).text(reversedIndex + ".");
             });
+
+            index--;
         });
 
         $('#columns').on('click', '.dropdown-item', function () {

@@ -3,170 +3,238 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ExpertCenter.DataContext;
 using ExpertCenter.DataContext.Entities;
+using ExpertCenter.MvcApp.Models.PriceList;
 
-namespace ExpertCenter.MvcApp.Controllers
+namespace ExpertCenter.MvcApp.Controllers;
+
+public class PriceListsController : Controller
 {
-    public class PriceListsController : Controller
+    private readonly ExpertCenterContext _context;
+
+    public PriceListsController(ExpertCenterContext context)
     {
-        private readonly ExpertCenterContext _context;
+        _context = context;
+    }
 
-        public PriceListsController(ExpertCenterContext context)
+    // GET: PriceLists
+    public async Task<IActionResult> Index()
+    {
+        return View(await _context.PriceList
+            .Select(x => new PriceListViewModel
+            {
+                PriceListId = x.PriceListId,
+                Name = x.Name
+            }).ToListAsync());
+    }
+
+    // GET: PriceLists/Details/5
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null)
         {
-            _context = context;
+            return NotFound();
         }
 
-        // GET: PriceLists
-        public async Task<IActionResult> Index()
+        if (!await _context.PriceList.AnyAsync(x => x.PriceListId == id))
         {
-            return View(await _context.PriceList.ToListAsync());
+            return NotFound();
         }
 
-        // GET: PriceLists/Details/5
-        public async Task<IActionResult> Details(int? id)
+        var priceList = await _context.PriceList
+            .Include(x => x.Products)
+            .ThenInclude(x => x.ColumnValues)
+            .Include(x => x.Columns)
+            .ThenInclude(x => x.ColumnType)
+            .SingleAsync(x => x.PriceListId == id);
+
+        var model = new PriceListDetailsModel
         {
-            if (id == null)
+            PriceListId = priceList.PriceListId,
+            PriceListName = priceList.Name,
+            Products = priceList.Products.Select(x => new ProductDetailsModel
             {
-                return NotFound();
-            }
+                ProductName = x.Name,
+                Article = x.Article,
+            })
+        };
 
-            var priceList = await _context.PriceList
-                .FirstOrDefaultAsync(m => m.PriceListId == id);
-            if (priceList == null)
+        if (priceList == null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    // GET: PriceLists/Create
+    public IActionResult Create()
+    {
+        ViewBag.ColumnTypes = new List<SelectListItem>
+        {
+            new SelectListItem
             {
-                return NotFound();
+                Text = "Числовой",
+                Value = nameof(IntColumn)
+            },
+            new SelectListItem
+            {
+                Text = "Однострочный",
+                Value = nameof(VarCharColumn)
+            },
+            new SelectListItem
+            {
+                Text = "Многострочный",
+                Value = nameof(StringTextColumn)
             }
+        };
 
+        return View();
+    }
+
+    // POST: PriceLists/Create
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(PriceListCreateModel priceList)
+    {
+        if (!ModelState.IsValid)
+        {
             return View(priceList);
         }
 
-        // GET: PriceLists/Create
-        public IActionResult Create()
+        var priceListEntity = new PriceList
         {
-            ViewBag.ColumnTypes = new List<SelectListItem>
-            {
-                new SelectListItem
-                {
-                    Text = "Числовой",
-                    Value = nameof(IntColumn)
-                },
-                new SelectListItem
-                {
-                    Text = "Однострочный",
-                    Value = nameof(VarCharColumn)
-                },
-                new SelectListItem
-                {
-                    Text = "Многострочный",
-                    Value = nameof(StringTextColumn)
-                }
-            };
+            Name = priceList.Name
+        };
 
-            return View();
+        var columnTypes = priceList.Columns.Select(c => c.ColumnType).ToList();
+
+        if (columnTypes.Count != 0 && !await _context.ColumnTypes.AnyAsync(c => columnTypes.Any(t => t == c.ColumnTypeId)))
+        {
+            ModelState.AddModelError(nameof(priceList.Columns), "Некорректные типы данных");
+            return View(priceList);
         }
 
-        // POST: PriceLists/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("PriceListId,Name")] PriceList priceList)
+        foreach (var column in priceList.Columns)
         {
-            if (ModelState.IsValid)
+            switch (column.ColumnType)
             {
-                _context.Add(priceList);
+                case nameof(IntColumn):
+                    priceListEntity.Columns.Add(new Column
+                    {
+                        ColumnTypeId = nameof(IntColumn),
+                        Name = column.ColumnName
+                    });
+                    break;
+                case nameof(VarCharColumn):
+                    priceListEntity.Columns.Add(new Column
+                    {
+                        ColumnTypeId = nameof(VarCharColumn),
+                        Name = column.ColumnName
+                    });
+                    break;
+                case nameof(StringTextColumn):
+                    priceListEntity.Columns.Add(new Column
+                    {
+                        ColumnTypeId = nameof(StringTextColumn),
+                        Name = column.ColumnName
+                    });
+                    break;
+            }
+        }
+
+        await _context.PriceList.AddAsync(priceListEntity);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: PriceLists/Edit/5
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var priceList = await _context.PriceList.FindAsync(id);
+        if (priceList == null)
+        {
+            return NotFound();
+        }
+        return View(priceList);
+    }
+
+    // POST: PriceLists/Edit/5
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("PriceListId,Name")] PriceList priceList)
+    {
+        if (id != priceList.PriceListId)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _context.Update(priceList);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
-            return View(priceList);
-        }
-
-        // GET: PriceLists/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            catch (DbUpdateConcurrencyException)
             {
-                return NotFound();
-            }
-
-            var priceList = await _context.PriceList.FindAsync(id);
-            if (priceList == null)
-            {
-                return NotFound();
-            }
-            return View(priceList);
-        }
-
-        // POST: PriceLists/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PriceListId,Name")] PriceList priceList)
-        {
-            if (id != priceList.PriceListId)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                if (!PriceListExists(priceList.PriceListId))
                 {
-                    _context.Update(priceList);
-                    await _context.SaveChangesAsync();
+                    return NotFound();
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!PriceListExists(priceList.PriceListId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    throw;
                 }
-                return RedirectToAction(nameof(Index));
             }
-            return View(priceList);
-        }
-
-        // GET: PriceLists/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var priceList = await _context.PriceList
-                .FirstOrDefaultAsync(m => m.PriceListId == id);
-            if (priceList == null)
-            {
-                return NotFound();
-            }
-
-            return View(priceList);
-        }
-
-        // POST: PriceLists/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var priceList = await _context.PriceList.FindAsync(id);
-            if (priceList != null)
-            {
-                _context.PriceList.Remove(priceList);
-            }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        return View(priceList);
+    }
 
-        private bool PriceListExists(int id)
+    // GET: PriceLists/Delete/5
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
         {
-            return _context.PriceList.Any(e => e.PriceListId == id);
+            return NotFound();
         }
+
+        var priceList = await _context.PriceList
+            .FirstOrDefaultAsync(m => m.PriceListId == id);
+        if (priceList == null)
+        {
+            return NotFound();
+        }
+
+        return View(priceList);
+    }
+
+    // POST: PriceLists/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var priceList = await _context.PriceList.FindAsync(id);
+        if (priceList != null)
+        {
+            _context.PriceList.Remove(priceList);
+        }
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool PriceListExists(int id)
+    {
+        return _context.PriceList.Any(e => e.PriceListId == id);
     }
 }

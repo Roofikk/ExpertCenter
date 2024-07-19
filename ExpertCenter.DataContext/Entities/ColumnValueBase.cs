@@ -6,5 +6,5 @@ public abstract class ColumnValueBase
     public int ColumnId { get; set; }
 
     public virtual Product Product { get; set; } = null!;
-    public virtual ColumnType Column { get; set; } = null!;
+    public virtual Column Column { get; set; } = null!;
 }

@@ -1,24 +1,30 @@
-﻿@model ExpertCenter.DataContext.Entities.PriceList
+﻿@using ExpertCenter.MvcApp.Models.PriceList
+@model PriceListDetailsModel
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.PriceListName;
 }
 
-<h1>Details</h1>
-
+<h1>@Model.PriceListName</h1>
+<a asp-controller="Products" asp-action="Create" asp-route-priceListId="@Model.PriceListId" class="btn btn-success">Создать новый товар</a>
+<a asp-action="Index" class="btn btn-secondary">Вернуться к списку</a>
+<hr />
 <div>
-    <h4>PriceList</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.PriceListId">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Наименование</th>
+                <th>Артикль</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Products)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Article</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

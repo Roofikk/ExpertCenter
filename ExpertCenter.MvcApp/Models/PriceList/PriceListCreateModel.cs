@@ -9,5 +9,5 @@ public class PriceListCreateModel
     [Display(Name = "Название")]
     public string Name { get; set; } = null!;
     [Display(Name = "Колонки")]
-    public ICollection<ColumnCreateModel> Columns { get; set; } = [];
+    public List<ColumnCreateModel> Columns { get; set; } = [];
 }

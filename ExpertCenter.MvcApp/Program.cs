@@ -1,4 +1,6 @@
 using ExpertCenter.DataContext;
+using ExpertCenter.DataContext.Entities;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,5 +26,43 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.Lifetime.ApplicationStarted.Register(async () =>
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ExpertCenterContext>();
+
+    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(IntColumn)))
+    {
+        await context.ColumnTypes.AddAsync(new ColumnType
+        {
+            ColumnTypeId = nameof(IntColumn),
+            DisplayColumnName = "Числовой",
+        });
+    }
+
+    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(VarCharColumn)))
+    {
+        await context.ColumnTypes.AddAsync(new ColumnType
+        {
+            ColumnTypeId = nameof(VarCharColumn),
+            DisplayColumnName = "Однострочный"
+        });
+    }
+
+    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(StringTextColumn)))
+    {
+        await context.ColumnTypes.AddAsync(new ColumnType
+        {
+            ColumnTypeId = nameof(StringTextColumn),
+            DisplayColumnName = "Многострочный"
+        });
+    }
+
+    if (context.ChangeTracker.HasChanges())
+    {
+        await context.SaveChangesAsync();
+    }
+});
 
 app.Run();

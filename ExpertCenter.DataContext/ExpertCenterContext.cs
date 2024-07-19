@@ -5,7 +5,8 @@ namespace ExpertCenter.DataContext;
 
 public class ExpertCenterContext : DbContext
 {
-    public DbSet<ColumnType> Columns { get; set; }
+    public DbSet<ColumnType> ColumnTypes { get; set; }
+    public DbSet<Column> Columns { get; set; }
     public DbSet<IntColumn> IntColumns { get; set; }
     public DbSet<VarCharColumn> VarCharColumns { get; set; }
     public DbSet<StringTextColumn> StringTextColumns { get; set; }
@@ -42,8 +43,18 @@ public class ExpertCenterContext : DbContext
                 .HasForeignKey(x => x.ColumnId);
 
             e.HasOne(x => x.Product)
-                .WithMany()
+                .WithMany(x => x.ColumnValues)
                 .HasForeignKey(x => x.ProductId);
+        });
+
+        modelBuilder.Entity<ColumnType>(e =>
+        {
+            e.HasKey(x => x.ColumnTypeId);
+            e.Property(x => x.ColumnTypeId).ValueGeneratedNever();
+
+            e.HasMany(x => x.Columns)
+                .WithOne(x => x.ColumnType)
+                .HasForeignKey(x => x.ColumnTypeId);
         });
 
         base.OnModelCreating(modelBuilder);

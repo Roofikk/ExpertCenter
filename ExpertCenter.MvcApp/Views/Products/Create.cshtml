@@ -1,0 +1,74 @@
+﻿@using ExpertCenter.MvcApp.Models.Product
+@using ExpertCenter.DataContext.Entities
+@model ProductCreateModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Добавление товара в прайс-лист</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <input type="hidden" asp-for="PriceListId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="ProductName" class="control-label" required="true"></label>
+                <input asp-for="ProductName" class="form-control" />
+                <span asp-validation-for="ProductName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Article" class="control-label" required="true"></label>
+                <input asp-for="Article" class="form-control" />
+                <span asp-validation-for="Article" class="text-danger"></span>
+            </div>
+            @for(int i = 0; i < Model.Columns.Count; i++)
+            {
+                <div class="form-group">
+                    <input name="Columns[@i].ColumnId" type="hidden" value="@Model.Columns[i].ColumnId" />
+                    <input name="Columns[@i].ColumnTypeId" type="hidden" value="@Model.Columns[i].ColumnTypeId" />
+                    <input name="Columns[@i].ColumnName" type="hidden" value="@Model.Columns[i].ColumnName" />
+
+                    <label id="Columns[@i].ColumnName" class="control-label">@Model.Columns[i].ColumnName</label>
+                    @switch (Model.Columns[i].ColumnTypeId)
+                    {
+                        case nameof(IntColumn):
+                            <input id="Columns[@i].Value"
+                                   name="Columns[@i].Value"
+                                   type="number"
+                                   class="form-control"
+                                   value="0" />
+                            break;
+                        case nameof(StringTextColumn):
+                            <textarea id="Columns[@i].Value"
+                                      name="Columns[@i].Value"
+                                      rows="3"
+                                      class="form-control"></textarea>
+                            break;
+                        case nameof(VarCharColumn):
+                            <input id="Columns[@i].Value"
+                                   name="Columns[@i].Value"
+                                   type="text"
+                                   maxlength="50"
+                                   class="form-control" />
+                            break;
+                    }
+                    <span asp-validation-for="Columns[@i].ColumnValue" class="text-danger"></span>
+                </div>
+            }
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

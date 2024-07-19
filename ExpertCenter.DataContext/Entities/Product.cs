@@ -8,5 +8,6 @@ public class Product
 
     public int PriceListId { get; set; }
 
-    public PriceList PriceList { get; set; } = null!;
+    public virtual PriceList PriceList { get; set; } = null!;
+    public virtual ICollection<ColumnValueBase> ColumnValues { get; } = [];
 }

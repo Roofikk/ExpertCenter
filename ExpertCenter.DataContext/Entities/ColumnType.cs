@@ -1,14 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace ExpertCenter.DataContext.Entities;
+﻿namespace ExpertCenter.DataContext.Entities;
 
 public class ColumnType
 {
-    public int Id { get; set; }
-    [Column(TypeName = "varchar(50)")]
-    public virtual string Name { get; set; } = null!;
+    public string ColumnTypeId { get; set; } = null!;
+    public string DisplayColumnName { get; set; } = null!;
 
-    public int PriceListId { get; set; }
-    public virtual PriceList PriceList { get; set; } = null!;
-    public virtual ICollection<ColumnValueBase> ColumnValues { get; set; } = [];
+    public virtual ICollection<Column> Columns { get; set; } = [];
 }
