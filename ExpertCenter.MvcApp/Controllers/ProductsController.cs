@@ -130,7 +130,7 @@ namespace ExpertCenter.MvcApp.Controllers
 
             await _context.Product.AddAsync(createdProduct);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "PriceLists", new { id = product.PriceListId });
         }
 
         // GET: Products/Edit/5
