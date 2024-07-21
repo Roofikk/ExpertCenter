@@ -73,14 +73,8 @@ namespace ExpertCenter.MvcApp.Controllers
 
             if (await _context.Product.AnyAsync(x => x.PriceListId == product.PriceListId && x.Article == product.Article))
             {
-                return BadRequest(new
-                {
-                    Message = "Такой артикул уже существует",
-                    Errors = new[]
-                    {
-                        new{ ErrorMessage = "Такой артикул уже существует", }
-                    }
-                });
+                ModelState.AddModelError("Article", "Такой артикул уже существует");
+                return View(product);
             }
 
             var createdProduct = new Product

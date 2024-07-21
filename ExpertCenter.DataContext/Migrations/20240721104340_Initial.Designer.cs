@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ExpertCenter.DataContext.Migrations
 {
     [DbContext(typeof(ExpertCenterContext))]
-    [Migration("20240721020358_Initial")]
+    [Migration("20240721104340_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -34,7 +34,7 @@ namespace ExpertCenter.DataContext.Migrations
 
                     b.Property<string>("ColumnTypeId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -50,11 +50,11 @@ namespace ExpertCenter.DataContext.Migrations
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.ColumnType", b =>
                 {
                     b.Property<string>("ColumnTypeId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("ColumnTypeId");
 
@@ -108,7 +108,7 @@ namespace ExpertCenter.DataContext.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("PriceListId")
                         .HasColumnType("int");

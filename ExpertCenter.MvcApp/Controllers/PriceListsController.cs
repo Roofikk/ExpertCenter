@@ -5,8 +5,6 @@ using ExpertCenter.DataContext;
 using ExpertCenter.DataContext.Entities;
 using ExpertCenter.MvcApp.Models.PriceList;
 using ExpertCenter.MvcApp.Models;
-using NuGet.Packaging;
-using System.Linq.Expressions;
 
 namespace ExpertCenter.MvcApp.Controllers;
 
@@ -265,7 +263,9 @@ public class PriceListsController : Controller
             Name = priceList.Name
         };
 
-        var columnTypes = priceList.Columns.Select(c => c.ColumnType).ToList();
+        var columnTypes = priceList.Columns
+            .Where(c => c.ColumnId == null)
+            .Select(c => c.ColumnType).ToList();
 
         if (columnTypes.Count != 0 && !await _context.ColumnTypes.AnyAsync(c => columnTypes.Any(t => t == c.ColumnTypeId)))
         {

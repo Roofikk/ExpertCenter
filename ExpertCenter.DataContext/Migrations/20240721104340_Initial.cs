@@ -14,8 +14,8 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "ColumnTypes",
                 columns: table => new
                 {
-                    ColumnTypeId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ColumnTypeId = table.Column<string>(type: "varchar(24)", nullable: false),
+                    DisplayName = table.Column<string>(type: "varchar(50)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -42,7 +42,7 @@ namespace ExpertCenter.DataContext.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "varchar(50)", nullable: false),
-                    ColumnTypeId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    ColumnTypeId = table.Column<string>(type: "varchar(24)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -61,7 +61,7 @@ namespace ExpertCenter.DataContext.Migrations
                 {
                     ProductId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(50)", nullable: false),
                     Article = table.Column<int>(type: "int", nullable: false),
                     PriceListId = table.Column<int>(type: "int", nullable: false)
                 },

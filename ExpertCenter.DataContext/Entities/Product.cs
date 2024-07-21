@@ -1,8 +1,11 @@
-﻿namespace ExpertCenter.DataContext.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ExpertCenter.DataContext.Entities;
 
 public class Product
 {
     public int ProductId { get; set; }
+    [Column(TypeName = "varchar(50)")]
     public string Name { get; set; } = null!;
     public int Article { get; set; }
 

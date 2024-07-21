@@ -31,7 +31,7 @@ namespace ExpertCenter.DataContext.Migrations
 
                     b.Property<string>("ColumnTypeId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -47,11 +47,11 @@ namespace ExpertCenter.DataContext.Migrations
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.ColumnType", b =>
                 {
                     b.Property<string>("ColumnTypeId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("ColumnTypeId");
 
@@ -105,7 +105,7 @@ namespace ExpertCenter.DataContext.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("PriceListId")
                         .HasColumnType("int");
