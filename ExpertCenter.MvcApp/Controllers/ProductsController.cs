@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ExpertCenter.DataContext;
 using ExpertCenter.DataContext.Entities;
+using ExpertCenter.MvcApp.Models.Column;
 using ExpertCenter.MvcApp.Models.Product;
 
 namespace ExpertCenter.MvcApp.Controllers
@@ -14,13 +15,6 @@ namespace ExpertCenter.MvcApp.Controllers
         public ProductsController(ExpertCenterContext context)
         {
             _context = context;
-        }
-
-        // GET: Products
-        public async Task<IActionResult> Index()
-        {
-            var expertCenterContext = _context.Product.Include(p => p.PriceList);
-            return View(await expertCenterContext.ToListAsync());
         }
 
         // GET: Products/Details/5
@@ -45,18 +39,19 @@ namespace ExpertCenter.MvcApp.Controllers
         // GET: Products/Create/5
         public async Task<IActionResult> Create(int? priceListId)
         {
-            if (!await _context.PriceList.AnyAsync(x => x.PriceListId == priceListId))
+            if (priceListId == null || !await _context.PriceList.AnyAsync(x => x.PriceListId == priceListId))
             {
                 return NotFound();
             }
 
             var columns = await _context.Columns
-                .Where(x => x.PriceListId == priceListId)
+                .Where(x => x.PriceLists.Any(y => y.PriceListId == priceListId))
                 .Include(x => x.ColumnType)
                 .ToListAsync();
 
             return View(new ProductCreateModel
             {
+                PriceListId = priceListId.Value,
                 Columns = columns.Select(x => new ProductCreateColumnModel
                 {
                     ColumnId = x.Id,
@@ -66,24 +61,26 @@ namespace ExpertCenter.MvcApp.Controllers
             });
         }
 
-        // POST: Products/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProductCreateModel product)
         {
             if (!ModelState.IsValid)
             {
-                ViewData["PriceListId"] = new SelectList(_context.PriceList, "PriceListId", "Name", product.PriceListId);
+                ModelState.AddModelError($"Columns", "Некорректное значение");
                 return View(product);
             }
 
             if (await _context.Product.AnyAsync(x => x.PriceListId == product.PriceListId && x.Article == product.Article))
             {
-                ModelState.AddModelError(nameof(product.Article), "Товар с таким артикулом уже существует");
-                ViewData["PriceListId"] = new SelectList(_context.PriceList, "PriceListId", "Name", product.PriceListId);
-                return View(product);
+                return BadRequest(new
+                {
+                    Message = "Такой артикул уже существует",
+                    Errors = new[]
+                    {
+                        new{ ErrorMessage = "Такой артикул уже существует", }
+                    }
+                });
             }
 
             var createdProduct = new Product
@@ -100,7 +97,7 @@ namespace ExpertCenter.MvcApp.Controllers
                     case nameof(IntColumn):
                         if (!int.TryParse(column.Value, out var intValue))
                         {
-                            ModelState.AddModelError(nameof(column.Value), "Некорректное значение");
+                            ModelState.AddModelError("Columns", "Некорректное значение");
                             ViewData["PriceListId"] = new SelectList(_context.PriceList, "PriceListId", "Name", product.PriceListId);
                             return View(product);
                         }
@@ -133,59 +130,6 @@ namespace ExpertCenter.MvcApp.Controllers
             return RedirectToAction("Details", "PriceLists", new { id = product.PriceListId });
         }
 
-        // GET: Products/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var product = await _context.Product.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-            ViewData["PriceListId"] = new SelectList(_context.PriceList, "PriceListId", "Name", product.PriceListId);
-            return View(product);
-        }
-
-        // POST: Products/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ProductId,Name,Article,PriceListId")] Product product)
-        {
-            if (id != product.ProductId)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(product);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductExists(product.ProductId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["PriceListId"] = new SelectList(_context.PriceList, "PriceListId", "Name", product.PriceListId);
-            return View(product);
-        }
-
         // GET: Products/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -196,28 +140,46 @@ namespace ExpertCenter.MvcApp.Controllers
 
             var product = await _context.Product
                 .Include(p => p.PriceList)
+                .Select(x => new ProductDeleteModel
+                {
+                    ProductId = x.ProductId,
+                    ProductName = x.Name,
+                    PriceListName = x.PriceList.Name
+                })
                 .FirstOrDefaultAsync(m => m.ProductId == id);
+
             if (product == null)
             {
                 return NotFound();
             }
 
-            return View(product);
+            return PartialView("Product/_Delete", product);
         }
 
         // POST: Products/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(ProductDeleteModel model)
         {
-            var product = await _context.Product.FindAsync(id);
-            if (product != null)
+            if (!await _context.Product.AnyAsync(x => x.ProductId == model.ProductId))
             {
-                _context.Product.Remove(product);
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            await _context.Product.Where(x => x.ProductId == model.ProductId).ExecuteDeleteAsync();
+
+            if (_context.ChangeTracker.HasChanges())
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Details", "PriceLists", new
+            {
+                id = model.PriceListId,
+                pageIndex = model.PageIndex,
+                sortBy = model.SortByModel?.ColumnId ?? "default",
+                isDesc = model.SortByModel?.IsDesc ?? false
+            });
         }
 
         private bool ProductExists(int id)

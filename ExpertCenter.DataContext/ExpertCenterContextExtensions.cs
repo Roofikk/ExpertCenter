@@ -7,11 +7,11 @@ public static class ExpertCenterContextExtensions
 {
     public static IServiceCollection AddExpertCenterContext(this IServiceCollection services, string? connectionString = null)
     {
-        connectionString ??= "Data Source=../ExpertCenter.db";
+        connectionString ??= @"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=Rufik2024;TrustServerCertificate=True;";
 
         return services.AddDbContext<ExpertCenterContext>(options =>
         {
-            options.UseSqlite(connectionString);
+            options.UseSqlServer(connectionString);
         });
     }
 }

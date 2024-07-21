@@ -2,6 +2,7 @@
 using ExpertCenter.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -14,30 +15,31 @@ namespace ExpertCenter.DataContext.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.7")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.Column", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ColumnTypeId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<int>("PriceListId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ColumnTypeId");
-
-                    b.HasIndex("PriceListId");
 
                     b.ToTable("Columns");
                 });
@@ -45,11 +47,11 @@ namespace ExpertCenter.DataContext.Migrations
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.ColumnType", b =>
                 {
                     b.Property<string>("ColumnTypeId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("DisplayColumnName")
+                    b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ColumnTypeId");
 
@@ -59,25 +61,27 @@ namespace ExpertCenter.DataContext.Migrations
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.ColumnValueBase", b =>
                 {
                     b.Property<int>("ColumnId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("ColumnId", "ProductId");
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ColumnValueBase");
+                    b.ToTable((string)null);
 
-                    b.UseTptMappingStrategy();
+                    b.UseTpcMappingStrategy();
                 });
 
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.PriceList", b =>
                 {
                     b.Property<int>("PriceListId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PriceListId"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -92,17 +96,19 @@ namespace ExpertCenter.DataContext.Migrations
                 {
                     b.Property<int>("ProductId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
 
                     b.Property<int>("Article")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PriceListId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("ProductId");
 
@@ -111,12 +117,27 @@ namespace ExpertCenter.DataContext.Migrations
                     b.ToTable("Product");
                 });
 
+            modelBuilder.Entity("PriceListColumns", b =>
+                {
+                    b.Property<int>("ColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PriceListId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ColumnId", "PriceListId");
+
+                    b.HasIndex("PriceListId");
+
+                    b.ToTable("PriceListColumns");
+                });
+
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.IntColumn", b =>
                 {
                     b.HasBaseType("ExpertCenter.DataContext.Entities.ColumnValueBase");
 
                     b.Property<int>("Value")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.ToTable("IntColumns");
                 });
@@ -151,15 +172,7 @@ namespace ExpertCenter.DataContext.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ExpertCenter.DataContext.Entities.PriceList", "PriceList")
-                        .WithMany("Columns")
-                        .HasForeignKey("PriceListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("ColumnType");
-
-                    b.Navigation("PriceList");
                 });
 
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.ColumnValueBase", b =>
@@ -171,7 +184,7 @@ namespace ExpertCenter.DataContext.Migrations
                         .IsRequired();
 
                     b.HasOne("ExpertCenter.DataContext.Entities.Product", "Product")
-                        .WithMany()
+                        .WithMany("ColumnValues")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -192,29 +205,17 @@ namespace ExpertCenter.DataContext.Migrations
                     b.Navigation("PriceList");
                 });
 
-            modelBuilder.Entity("ExpertCenter.DataContext.Entities.IntColumn", b =>
+            modelBuilder.Entity("PriceListColumns", b =>
                 {
-                    b.HasOne("ExpertCenter.DataContext.Entities.ColumnValueBase", null)
-                        .WithOne()
-                        .HasForeignKey("ExpertCenter.DataContext.Entities.IntColumn", "ColumnId", "ProductId")
+                    b.HasOne("ExpertCenter.DataContext.Entities.Column", null)
+                        .WithMany()
+                        .HasForeignKey("ColumnId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
 
-            modelBuilder.Entity("ExpertCenter.DataContext.Entities.StringTextColumn", b =>
-                {
-                    b.HasOne("ExpertCenter.DataContext.Entities.ColumnValueBase", null)
-                        .WithOne()
-                        .HasForeignKey("ExpertCenter.DataContext.Entities.StringTextColumn", "ColumnId", "ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ExpertCenter.DataContext.Entities.VarCharColumn", b =>
-                {
-                    b.HasOne("ExpertCenter.DataContext.Entities.ColumnValueBase", null)
-                        .WithOne()
-                        .HasForeignKey("ExpertCenter.DataContext.Entities.VarCharColumn", "ColumnId", "ProductId")
+                    b.HasOne("ExpertCenter.DataContext.Entities.PriceList", null)
+                        .WithMany()
+                        .HasForeignKey("PriceListId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -231,9 +232,12 @@ namespace ExpertCenter.DataContext.Migrations
 
             modelBuilder.Entity("ExpertCenter.DataContext.Entities.PriceList", b =>
                 {
-                    b.Navigation("Columns");
-
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ExpertCenter.DataContext.Entities.Product", b =>
+                {
+                    b.Navigation("ColumnValues");
                 });
 #pragma warning restore 612, 618
         }

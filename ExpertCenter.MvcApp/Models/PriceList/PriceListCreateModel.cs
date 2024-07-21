@@ -1,4 +1,4 @@
-﻿using ExpertCenter.MvcApp.Models.Product;
+﻿using ExpertCenter.MvcApp.Models.Column;
 using System.ComponentModel.DataAnnotations;
 
 namespace ExpertCenter.MvcApp.Models.PriceList;

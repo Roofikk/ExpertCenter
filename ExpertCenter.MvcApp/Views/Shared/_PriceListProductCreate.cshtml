@@ -1,17 +1,20 @@
-﻿@using ExpertCenter.MvcApp.Models.Product
+﻿@using ExpertCenter.MvcApp.Models.Column
 
 @model ColumnCreateModel
 
-<li class="row row-cols-4 align-items-center column p-2 m-1 border-warning border rounded">
+<li class="row row-cols-4 align-items-center py-2 my-1 column border-warning border rounded">
+    <input type="hidden" asp-for="ColumnId" />
+    <input type="hidden" asp-for="Number" />
     <div class="number col-auto">
+        @Model.Number
     </div>
-    <div class="col-4">
+    <div class="col-6">
         <div class="form-group">
             <input asp-for="ColumnName" class="form-control" placeholder="Название колонки" autocomplete="off" />
             <span asp-validation-for="ColumnName" class="text-danger"></span>
         </div>
     </div>
-    <div class="col-2">
+    <div class="col-3">
         <div class="form-group">
             <input asp-for="ColumnType" class="form-control" value="@ViewBag.ColumnTypes[0].Value" hidden />
             <div class="dropdown column-type-selector">
@@ -32,7 +35,7 @@
             </div>
         </div>
     </div>
-    <div class="col-auto">
+    <div class="col-2">
         <button class="btn btn-danger w-100 delete-column" type="button">Удалить</button>
     </div>
 </li>

@@ -37,7 +37,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         await context.ColumnTypes.AddAsync(new ColumnType
         {
             ColumnTypeId = nameof(IntColumn),
-            DisplayColumnName = "Числовой",
+            DisplayName = "Числовой",
         });
     }
 
@@ -46,7 +46,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         await context.ColumnTypes.AddAsync(new ColumnType
         {
             ColumnTypeId = nameof(VarCharColumn),
-            DisplayColumnName = "Однострочный"
+            DisplayName = "Однострочный"
         });
     }
 
@@ -55,7 +55,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         await context.ColumnTypes.AddAsync(new ColumnType
         {
             ColumnTypeId = nameof(StringTextColumn),
-            DisplayColumnName = "Многострочный"
+            DisplayName = "Многострочный"
         });
     }
 

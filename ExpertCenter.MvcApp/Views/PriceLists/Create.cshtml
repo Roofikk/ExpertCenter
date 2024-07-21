@@ -1,5 +1,5 @@
 ﻿@using ExpertCenter.MvcApp.Models.PriceList
-@using ExpertCenter.MvcApp.Models.Product
+@using ExpertCenter.MvcApp.Models.Column
 @model PriceListCreateModel
 
 @{
@@ -18,20 +18,89 @@
         </div>
         <div class="form-group mt-3">
             <label asp-for="Columns" class="control-label"></label>
-            <button id="addProduct" type="button" class="btn btn-warning ms-3">Добавить</button>
-            <div class="gap-2 my-3">
-                <div id="patternProduct" class="d-none">
-                    @await Html.PartialAsync("_PriceListProductCreate")
-                </div>
-                <ol id="columns" class="d-flex flex-column flex-column-reverse">
-                </ol>
+            <div class="btn-group dropend ms-3">
+                <button type="button"
+                        class="btn btn-warning dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    Добавить
+                </button>
+                <ul class="dropdown-menu ">
+                    <li>
+                        <button id="addColumn" type="button" class="dropdown-item bg-warning">Новую</button>
+                    </li>
+                    <li>
+                        <button type="button"
+                                class="dropdown-item bg-warning"
+                                data-bs-toggle="modal"
+                                data-bs-target="#existingColumns">
+                            Существующую
+                        </button>
+                    </li>
+                </ul>
             </div>
         </div>
+        <div class="gap-2 my-3">
+            <div id="patternProduct" class="d-none">
+                @(
+                    await Html.PartialAsync("_PriceListProductCreate", new ColumnCreateModel()
+                    {
+                        ColumnName = "",
+                        ColumnType = "",
+                    })
+                    )
+            </div>
+            <ol id="columns" class="d-flex flex-column">
+                @if (Model != null)
+                {
+                    @foreach (var column in Model.Columns)
+                    {
+                        @await Html.PartialAsync("_PriceListProductCreate", column)
+                    }
+                }
+            </ol>
+        </div>
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <a asp-action="Index">Обратно к прайс-листам</a>
-            <input type="submit" value="Продолжить" class="btn btn-success" />
+            <a asp-action="Index" class="btn btn-secondary">Обратно к списку прайс листов</a>
+            <input type="submit" value="Создать" class="btn btn-success" />
         </div>
     </form>
+</div>
+<div id="existingColumns" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Заголовок модального окна</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="my-4 row">
+                    <div class="col-5 fw-bold">Название</div>
+                    <div class="col-5 fw-bold mb-3">Тип</div>
+                        @foreach (var column in ViewBag.ExistingColumns)
+                        {
+                            <div id="existingColumn-@column.Id" class="exist-column row">
+                                <div class="col-5">
+                                    <label>@column.Name</label>
+                                </div>
+                                <div class="col-5">
+                                    <label>@column.Type</label>
+                                </div>
+                                <div class="col-2 my-1">
+                                    <button type="button"
+                                            class="btn btn-warning"
+                                            onclick="addExistingColumn(@column.Id, '@column.Name', '@column.Type')"
+                                            data-bs-dismiss="modal">
+                                        Добавить
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -40,28 +109,93 @@
     <script>
         let index = 0;
 
-        $('#addProduct').click(() => {
+        function addExistingColumn(id, name, type) {
+            $('#existingColumn-' + id).hide();
             let newElem = $('#patternProduct').clone();
 
-            newElem.find('input[name="ColumnName"]').attr('name', `Columns[${index}].ColumnName`);
-            newElem.find('input[name="ColumnType"]').attr('name', `Columns[${index}].ColumnType`);
+            var inputId = newElem.find('input[name="ColumnId"]');
+            inputId.attr('name', `Columns[${index}].ColumnId`);
+            inputId.attr('value', id);
+
+            var inputColumnName = newElem.find('input[name="ColumnName"]');
+            inputColumnName.attr('name', `Columns[${index}].ColumnName`);
+            inputColumnName.attr('value', name);
+            inputColumnName.prop('readonly', true);
+
+            var inputColumnType = newElem.find('input[name="ColumnType"]');
+            inputColumnType.attr('name', `Columns[${index}].ColumnType`);
+            inputColumnType.attr('value', type);
+
+            var inputNumber = newElem.find('input[name="Number"]');
+            inputNumber.attr('name', `Columns[${index}].Number`);
+            inputNumber.attr('value', index + 1);
+
+            var buttonSelector = newElem.find('.column-type-selector-button');
+            buttonSelector.text(type);
+            buttonSelector.prop('disabled', true);
 
             $('#columns').append(newElem.html());
 
             $('#columns .number').each(function (index) {
-                var reversedIndex = $('#columns .number').length - index;
-                $(this).text(reversedIndex + ".");
+                $(this).text(index + 1 + ".");
+            });
+
+            index++;
+        }
+
+        function validateColumns() {
+            var isValid = true;
+
+            $('#columns .form-group').each(function () {
+                var input = $(this).find('input');
+                var span = $(this).find('span');
+
+                if (input.val() === '' || input.val().length > 50) {
+                    isValid = false;
+                    span.text('Поле обязательно для заполнения');
+                }
+            })
+
+            return isValid;
+        }
+
+        $(document).ready(() => {
+            $('form').submit(function (e) {
+                if (!validateColumns()) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        $('#addColumn').click(() => {
+            let newElem = $('#patternProduct').clone();
+
+            newElem.find('input[name="ColumnName"]').attr('name', `Columns[${index}].ColumnName`);
+            newElem.find('input[name="ColumnType"]').attr('name', `Columns[${index}].ColumnType`);
+            newElem.find('input[name="Number"]').attr('value', index + 1);
+            newElem.find('input[name="Number"]').attr('name', `Columns[${index}].Number`);
+
+            $('#columns').append(newElem.html());
+
+            $('#columns .number').each(function (index) {
+                $(this).text(index + 1 + ".");
             });
 
             index++;
         });
 
         $('#columns').on('click', '.delete-column', function() {
-            $(this).closest('li').remove();
+            var li = $(this).closest('li');
+            var inputColumnId = li.find('input[id="ColumnId"]');
+
+            if (inputColumnId.val() != '') {
+                $('#existingColumn-' + inputColumnId.val()).show();
+            }
+
+            li.remove();
 
             $('#columns .number').each(function (index) {
-                var reversedIndex = $('#columns .number').length - index;
-                $(this).text(reversedIndex + ".");
+                $(this).text(index + 1 + ".");
             });
 
             index--;
@@ -74,10 +208,5 @@
             dropdownButton.text($(this).text());
             hiddenInput.attr('value', $(this).attr('value'));
         });
-
-        $('.dropdown-menu').on('click', '.dropdown-item', function () {
-            console.log('ALFKDLF');
-            $(this).closest('.column-type-selector-button').text($('.dropdown-item').text());
-        })
     </script>
 }

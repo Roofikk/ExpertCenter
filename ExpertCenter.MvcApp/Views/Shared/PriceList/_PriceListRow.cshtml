@@ -1,0 +1,20 @@
+﻿@model PriceListViewModel
+
+<tr>
+    <td>
+        @Html.DisplayFor(modelItem => Model.PriceListId)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => Model.Name)
+    </td>
+    <td>
+        <a asp-action="Details"
+           asp-route-id="@Model.PriceListId"
+           class="btn btn-sm btn-secondary">Подробнее</a>
+        <a asp-action="Edit"
+           asp-route-id="@Model.PriceListId"
+           class="btn btn-sm btn-primary">Изменить</a>
+        <button class="btn btn-sm btn-danger"
+                onclick="deletePriceList(@Model.PriceListId, '@Model.Name')">Удалить</button>
+    </td>
+</tr>

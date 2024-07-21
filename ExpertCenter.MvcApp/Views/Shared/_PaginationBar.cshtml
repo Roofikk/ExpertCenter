@@ -1,0 +1,40 @@
+﻿@model PaginationBarModel
+
+@{
+}
+
+<div class="pagination row row-cols-auto justify-content-center gap-1">
+    @if (Model.CurrentPage > 1)
+    {
+        <a class="btn btn-secondary"
+           asp-action="@Model.ActionName"
+           asp-controller="@Model.ControllerName"
+           asp-all-route-data="@Model.RouteValues"
+           asp-route-pageIndex="@(Model.CurrentPage - 1)">&lt;</a>
+    }
+
+    @for (int i = 1; i <= Model.TotalPages; i++)
+    {
+        if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 1 && i <= Model.CurrentPage + 1))
+        {
+            <a class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-secondary")"
+               asp-action="@Model.ActionName"
+               asp-controller="@Model.ControllerName"
+               asp-all-route-data="@Model.RouteValues"
+               asp-route-pageIndex="@i">@i</a>
+        }
+        else if (i == 2 || i == Model.TotalPages - 1)
+        {
+            <span>...</span>
+        }
+    }
+
+    @if (Model.CurrentPage < Model.TotalPages)
+    {
+        <a class="btn btn-secondary"
+           asp-action="@Model.ActionName"
+           asp-controller="@Model.ControllerName"
+           asp-all-route-data="@Model.RouteValues"
+           asp-route-pageIndex="@(Model.CurrentPage + 1)">&gt;</a>
+    }
+</div>

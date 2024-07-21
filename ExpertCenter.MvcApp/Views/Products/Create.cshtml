@@ -1,4 +1,4 @@
-﻿@using ExpertCenter.MvcApp.Models.Product
+﻿@using ExpertCenter.MvcApp.Models.Column
 @using ExpertCenter.DataContext.Entities
 @model ProductCreateModel
 
@@ -9,8 +9,14 @@
 <h1>Добавление товара в прайс-лист</h1>
 
 <hr />
-<div class="row">
-    <div class="col-md-4">
+<div class="row gap-2">
+    <div>
+        <a asp-action="Details"
+           asp-controller="PriceLists"
+           asp-route-id="@Model.PriceListId"
+           class="btn btn-secondary">Вернуться обратно к прайс листу</a>
+    </div>
+    <div class="col-xl-4 col-lg-6 col-md-6 col-12">
         <form asp-action="Create">
             <input type="hidden" asp-for="PriceListId" />
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -24,51 +30,88 @@
                 <input asp-for="Article" class="form-control" />
                 <span asp-validation-for="Article" class="text-danger"></span>
             </div>
-            @for(int i = 0; i < Model.Columns.Count; i++)
-            {
-                <div class="form-group">
+
+            <div id="otherColumns">
+                @for (int i = 0; i < Model.Columns.Count; i++)
+                {
                     <input name="Columns[@i].ColumnId" type="hidden" value="@Model.Columns[i].ColumnId" />
                     <input name="Columns[@i].ColumnTypeId" type="hidden" value="@Model.Columns[i].ColumnTypeId" />
                     <input name="Columns[@i].ColumnName" type="hidden" value="@Model.Columns[i].ColumnName" />
-
-                    <label id="Columns[@i].ColumnName" class="control-label">@Model.Columns[i].ColumnName</label>
-                    @switch (Model.Columns[i].ColumnTypeId)
-                    {
-                        case nameof(IntColumn):
-                            <input id="Columns[@i].Value"
-                                   name="Columns[@i].Value"
-                                   type="number"
-                                   class="form-control"
-                                   value="0" />
-                            break;
-                        case nameof(StringTextColumn):
-                            <textarea id="Columns[@i].Value"
-                                      name="Columns[@i].Value"
-                                      rows="3"
-                                      class="form-control"></textarea>
-                            break;
-                        case nameof(VarCharColumn):
-                            <input id="Columns[@i].Value"
-                                   name="Columns[@i].Value"
-                                   type="text"
-                                   maxlength="50"
-                                   class="form-control" />
-                            break;
-                    }
-                    <span asp-validation-for="Columns[@i].ColumnValue" class="text-danger"></span>
-                </div>
-            }
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                    <div class="form-group">
+                        <label id="Columns[@i].ColumnName" class="control-label" required="true">@Model.Columns[i].ColumnName</label>
+                        @switch (Model.Columns[i].ColumnTypeId)
+                        {
+                            case nameof(IntColumn):
+                                <input id="Columns[@i].Value"
+                                       name="Columns[@i].Value"
+                                       type="number"
+                                       class="form-control"
+                                       value="0" />
+                                break;
+                            case nameof(StringTextColumn):
+                                <textarea id="Columns[@i].Value"
+                                          name="Columns[@i].Value"
+                                          rows="3"
+                                          class="form-control"></textarea>
+                                break;
+                            case nameof(VarCharColumn):
+                                <input id="Columns[@i].Value"
+                                       name="Columns[@i].Value"
+                                       type="text"
+                                       maxlength="50"
+                                       class="form-control" />
+                                break;
+                        }
+                        <span asp-validation-for="Columns[@i].ColumnValue" class="text-danger"></span>
+                    </div>
+                }
+            </div>
+            <div class="form-group mt-2">
+                <button type="submit" class="btn btn-success">Создать</button>
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        function validateColumns() {
+            var isValid = true;
+
+            $('#otherColumns .form-group').each(function () {
+                var input = $(this).find('input');
+                var textarea = $(this).find('textarea');
+                var span = $(this).find('span');
+
+                if (input.val() === '' || textarea.val() === '') {
+                    isValid = false;
+                    span.text('Поле обязательно для заполнения');
+                }
+
+                if (input.val() !== undefined) {
+                    if (input.val().length > input.attr('maxlength')) {
+                        isValid = false;
+                        span.text('Слишком длинное значение');
+                    }
+                }
+            });
+
+            console.log(isValid);
+            return isValid;
+        }
+
+        $(document).ready(() => {
+            console.log('ready');
+            $('form').submit(function (e) {
+                if (!validateColumns()) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 }

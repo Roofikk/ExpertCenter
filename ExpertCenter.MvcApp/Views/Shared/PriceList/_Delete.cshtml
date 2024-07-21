@@ -1,0 +1,23 @@
+﻿@using ExpertCenter.MvcApp.Models
+@model PriceListDeleteModel
+
+<div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Delete" asp-controller="PriceLists" method="post">
+                <input asp-for="PriceListId" type="hidden" />
+                <div class="modal-header">
+                    <h3 class="modal-title">Удалить <span id="priceListName">@Model.PriceListName</span></h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить этот прайс лист?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

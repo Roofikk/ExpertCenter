@@ -11,11 +11,23 @@ namespace ExpertCenter.DataContext.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "ColumnTypes",
+                columns: table => new
+                {
+                    ColumnTypeId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ColumnTypes", x => x.ColumnTypeId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PriceList",
                 columns: table => new
                 {
-                    PriceListId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    PriceListId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "varchar(100)", nullable: false)
                 },
                 constraints: table =>
@@ -27,19 +39,19 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "Columns",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "varchar(50)", nullable: false),
-                    PriceListId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ColumnTypeId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Columns", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Columns_PriceList_PriceListId",
-                        column: x => x.PriceListId,
-                        principalTable: "PriceList",
-                        principalColumn: "PriceListId",
+                        name: "FK_Columns_ColumnTypes_ColumnTypeId",
+                        column: x => x.ColumnTypeId,
+                        principalTable: "ColumnTypes",
+                        principalColumn: "ColumnTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -47,11 +59,11 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "Product",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Article = table.Column<int>(type: "INTEGER", nullable: false),
-                    PriceListId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ProductId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Article = table.Column<int>(type: "int", nullable: false),
+                    PriceListId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -65,26 +77,26 @@ namespace ExpertCenter.DataContext.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ColumnValueBase",
+                name: "PriceListColumns",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ColumnId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ColumnId = table.Column<int>(type: "int", nullable: false),
+                    PriceListId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ColumnValueBase", x => new { x.ColumnId, x.ProductId });
+                    table.PrimaryKey("PK_PriceListColumns", x => new { x.ColumnId, x.PriceListId });
                     table.ForeignKey(
-                        name: "FK_ColumnValueBase_Columns_ColumnId",
+                        name: "FK_PriceListColumns_Columns_ColumnId",
                         column: x => x.ColumnId,
                         principalTable: "Columns",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ColumnValueBase_Product_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Product",
-                        principalColumn: "ProductId",
+                        name: "FK_PriceListColumns_PriceList_PriceListId",
+                        column: x => x.PriceListId,
+                        principalTable: "PriceList",
+                        principalColumn: "PriceListId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -92,19 +104,13 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "IntColumns",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ColumnId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Value = table.Column<int>(type: "INTEGER", nullable: false)
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ColumnId = table.Column<int>(type: "int", nullable: false),
+                    Value = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_IntColumns", x => new { x.ColumnId, x.ProductId });
-                    table.ForeignKey(
-                        name: "FK_IntColumns_ColumnValueBase_ColumnId_ProductId",
-                        columns: x => new { x.ColumnId, x.ProductId },
-                        principalTable: "ColumnValueBase",
-                        principalColumns: new[] { "ColumnId", "ProductId" },
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_IntColumns_Columns_ColumnId",
                         column: x => x.ColumnId,
@@ -123,19 +129,13 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "StringTextColumns",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ColumnId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ColumnId = table.Column<int>(type: "int", nullable: false),
                     Value = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_StringTextColumns", x => new { x.ColumnId, x.ProductId });
-                    table.ForeignKey(
-                        name: "FK_StringTextColumns_ColumnValueBase_ColumnId_ProductId",
-                        columns: x => new { x.ColumnId, x.ProductId },
-                        principalTable: "ColumnValueBase",
-                        principalColumns: new[] { "ColumnId", "ProductId" },
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_StringTextColumns_Columns_ColumnId",
                         column: x => x.ColumnId,
@@ -154,19 +154,13 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "VarCharColumns",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ColumnId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ColumnId = table.Column<int>(type: "int", nullable: false),
                     Value = table.Column<string>(type: "varchar(50)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_VarCharColumns", x => new { x.ColumnId, x.ProductId });
-                    table.ForeignKey(
-                        name: "FK_VarCharColumns_ColumnValueBase_ColumnId_ProductId",
-                        columns: x => new { x.ColumnId, x.ProductId },
-                        principalTable: "ColumnValueBase",
-                        principalColumns: new[] { "ColumnId", "ProductId" },
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_VarCharColumns_Columns_ColumnId",
                         column: x => x.ColumnId,
@@ -182,19 +176,19 @@ namespace ExpertCenter.DataContext.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Columns_PriceListId",
+                name: "IX_Columns_ColumnTypeId",
                 table: "Columns",
-                column: "PriceListId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ColumnValueBase_ProductId",
-                table: "ColumnValueBase",
-                column: "ProductId");
+                column: "ColumnTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_IntColumns_ProductId",
                 table: "IntColumns",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PriceListColumns_PriceListId",
+                table: "PriceListColumns",
+                column: "PriceListId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Product_PriceListId",
@@ -219,19 +213,22 @@ namespace ExpertCenter.DataContext.Migrations
                 name: "IntColumns");
 
             migrationBuilder.DropTable(
+                name: "PriceListColumns");
+
+            migrationBuilder.DropTable(
                 name: "StringTextColumns");
 
             migrationBuilder.DropTable(
                 name: "VarCharColumns");
 
             migrationBuilder.DropTable(
-                name: "ColumnValueBase");
-
-            migrationBuilder.DropTable(
                 name: "Columns");
 
             migrationBuilder.DropTable(
                 name: "Product");
+
+            migrationBuilder.DropTable(
+                name: "ColumnTypes");
 
             migrationBuilder.DropTable(
                 name: "PriceList");

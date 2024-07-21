@@ -1,7 +1,7 @@
 ﻿using ExpertCenter.MvcApp.Models.PriceList;
 using System.ComponentModel.DataAnnotations;
 
-namespace ExpertCenter.MvcApp.Models.Product;
+namespace ExpertCenter.MvcApp.Models.Column;
 
 public class ProductCreateModel
 {

@@ -27,15 +27,17 @@ public class ExpertCenterContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlite("Data Source=../ExpertCenter.db");
+            optionsBuilder.UseSqlServer(@"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=Rufik2024;TrustServerCertificate=True;");
         }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<ColumnValueBase>(e =>
         {
-            e.UseTptMappingStrategy();
+            e.UseTpcMappingStrategy();
             e.HasKey(x => new { x.ColumnId, x.ProductId });
 
             e.HasOne(x => x.Column)
@@ -57,6 +59,18 @@ public class ExpertCenterContext : DbContext
                 .HasForeignKey(x => x.ColumnTypeId);
         });
 
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<PriceList>(e =>
+        {
+            e.HasKey(x => x.PriceListId);
+            e.Property(x => x.PriceListId).ValueGeneratedOnAdd();
+
+            e.HasMany(x => x.Columns)
+                .WithMany(x => x.PriceLists)
+                .UsingEntity(
+                    "PriceListColumns",
+                    x => x.HasOne(typeof(Column)).WithMany().HasForeignKey("ColumnId"),
+                    x => x.HasOne(typeof(PriceList)).WithMany().HasForeignKey("PriceListId"),
+                    j => j.HasKey("ColumnId", "PriceListId"));
+        });
     }
 }
