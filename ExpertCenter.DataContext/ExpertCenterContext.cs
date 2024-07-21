@@ -27,7 +27,7 @@ public class ExpertCenterContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer(@"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=Rufik2024;TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer(@"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=root1234;TrustServerCertificate=True;");
         }
     }
 
