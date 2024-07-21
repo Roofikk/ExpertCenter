@@ -1,11 +1,15 @@
 using ExpertCenter.DataContext;
 using ExpertCenter.DataContext.Entities;
+using ExpertCenter.MvcApp.Services.PriceLists;
+using ExpertCenter.MvcApp.Services.Products;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddExpertCenterContext();
+builder.Services.AddScoped<IProductsService, ProductsService>();
+builder.Services.AddScoped<IPriceListsService, PriceListsService>();
 
 var app = builder.Build();
 

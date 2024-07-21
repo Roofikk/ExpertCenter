@@ -5,22 +5,29 @@ using ExpertCenter.DataContext;
 using ExpertCenter.DataContext.Entities;
 using ExpertCenter.MvcApp.Models.PriceList;
 using ExpertCenter.MvcApp.Models;
+using ExpertCenter.MvcApp.Services.Products;
+using ExpertCenter.MvcApp.Services.PriceLists;
 
 namespace ExpertCenter.MvcApp.Controllers;
 
 public class PriceListsController : Controller
 {
     private readonly ExpertCenterContext _context;
+    private readonly IPriceListsService _priceListsService;
+    private readonly IProductsService _productsService;
 
-    public PriceListsController(ExpertCenterContext context)
+    public PriceListsController(ExpertCenterContext context,
+        IProductsService productsService, IPriceListsService priceListsService)
     {
         _context = context;
+        _productsService = productsService;
+        _priceListsService = priceListsService;
     }
 
     // GET: PriceLists
     public async Task<IActionResult> Index()
     {
-        return View(await _context.PriceList
+        return View(await _context.PriceLists
             .OrderByDescending(x => x.PriceListId)
             .Select(x => new PriceListViewModel
             {
@@ -39,88 +46,21 @@ public class PriceListsController : Controller
             return NotFound();
         }
 
-        if (!await _context.PriceList.AnyAsync(x => x.PriceListId == id))
+        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
         {
             return NotFound();
         }
 
-        var priceList = await _context.PriceList
+        var priceList = await _context.PriceLists
             .Include(x => x.Columns)
             .ThenInclude(x => x.ColumnValues)
             .SingleAsync(x => x.PriceListId == id);
 
-        var productsQuery = _context.Product
-            .Where(x => x.PriceListId == id);
-
-        switch (sortBy)
+        var productsQuery = await _productsService.GetProductsAsync(id, new SortByModel
         {
-            case "Name":
-                productsQuery = isDesc
-                    ? productsQuery.OrderByDescending(x => x.Name)
-                    : productsQuery.OrderBy(x => x.Name);
-                break;
-            case "Article":
-                productsQuery = isDesc
-                    ? productsQuery.OrderByDescending(x => x.Article)
-                    : productsQuery.OrderBy(x => x.Article);
-                break;
-            default:
-                var existingColumnSortBy = priceList.Columns.FirstOrDefault(x => x.Id.ToString() == sortBy);
-
-                if (existingColumnSortBy != null)
-                {
-                    var columnType = existingColumnSortBy.ColumnTypeId;
-
-                    switch (columnType)
-                    {
-                        case nameof(IntColumn):
-                            productsQuery = isDesc
-                                ? productsQuery.OrderByDescending(x =>
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((IntColumn)x).Value).First())
-                                : productsQuery.OrderBy(x => 
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((IntColumn)x).Value).First());
-                            break;
-                        case nameof(StringTextColumn):
-                            productsQuery = isDesc
-                                ? productsQuery.OrderByDescending(x =>
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((StringTextColumn)x).Value).First())
-                                : productsQuery.OrderBy(x =>
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((StringTextColumn)x).Value).First());
-                            break;
-                        case nameof(VarCharColumn):
-                            productsQuery = isDesc
-                                ? productsQuery.OrderByDescending(x =>
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((VarCharColumn)x).Value).First())
-                                : productsQuery.OrderBy(x =>
-                                    x.ColumnValues
-                                        .Where(x => x.ColumnId == existingColumnSortBy.Id)
-                                        .Select(x => ((VarCharColumn)x).Value).First());
-                            break;
-                        default:
-                            throw new Exception();
-                    }
-                }
-                else
-                {
-                    productsQuery = isDesc
-                        ? productsQuery
-                            .OrderByDescending(x => x.ProductId)
-                        : productsQuery
-                            .OrderBy(x => x.ProductId);
-                }
-
-                break;
-        }
+            ColumnId = sortBy ?? "default",
+            IsDesc = isDesc
+        });
 
         var dict = new Dictionary<ColumnViewModel, Dictionary<int, string>>(priceList.Columns.Count);
 
@@ -218,7 +158,129 @@ public class PriceListsController : Controller
         return View(model);
     }
 
-    private async Task CreateViewBag()
+    // GET: PriceLists/Create
+    public async Task<IActionResult> Create()
+    {
+        await CreateViewBagWithExistingColumns();
+        return View();
+    }
+
+    // POST: PriceLists/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(PriceListCreateModel priceList)
+    {
+        if (!ModelState.IsValid)
+        {
+            ModelState.AddModelError("", "Заполните все обязательные поля");
+            await CreateViewBagWithExistingColumns();
+            return View(priceList);
+        }
+
+        try
+        {
+            var entity = await _priceListsService.CreateAsync(priceList);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = entity.PriceListId });
+        }
+        catch (Exception e)
+        {
+            ModelState.AddModelError($"Ошибка при создании прайс листа: {priceList.Name}", e.Message);
+            await CreateViewBagWithExistingColumns();
+            return View(priceList);
+        }
+    }
+
+    // GET: PriceLists/Edit/5
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var priceList = await _context.PriceLists.FindAsync(id);
+        if (priceList == null)
+        {
+            return NotFound();
+        }
+        return View(priceList);
+    }
+
+    // POST: PriceLists/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("PriceListId,Name")] PriceList priceList)
+    {
+        if (id != priceList.PriceListId)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(priceList);
+        }
+
+        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            _context.Update(priceList);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new Exception($"PriceList {id} update error: {ex.Message}");
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: PriceLists/Delete/5
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var priceList = await _context.PriceLists
+            .FirstOrDefaultAsync(m => m.PriceListId == id);
+
+        if (priceList == null)
+        {
+            return NotFound();
+        }
+
+        return View(priceList);
+    }
+
+    // POST: PriceLists/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        {
+            return NotFound();
+        }
+
+        await _context.PriceLists.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
+
+        if (_context.ChangeTracker.HasChanges())
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    private async Task CreateViewBagWithExistingColumns()
     {
         ViewBag.ColumnTypes = await _context.ColumnTypes.Select(x => new SelectListItem
         {
@@ -235,198 +297,5 @@ public class PriceListsController : Controller
                 Type = x.ColumnType.DisplayName
             })
             .ToListAsync();
-    }
-
-    // GET: PriceLists/Create
-    public async Task<IActionResult> Create()
-    {
-        await CreateViewBag();
-        return View();
-    }
-
-    // POST: PriceLists/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(PriceListCreateModel priceList)
-    {
-        if (!ModelState.IsValid)
-        {
-            ModelState.AddModelError("", "Заполните все обязательные поля");
-            await CreateViewBag();
-            return View(priceList);
-        }
-
-        var priceListEntity = new PriceList
-        {
-            Name = priceList.Name
-        };
-
-        var columnTypes = priceList.Columns
-            .Where(c => c.ColumnId == null)
-            .Select(c => c.ColumnType).ToList();
-
-        if (columnTypes.Count != 0 && !await _context.ColumnTypes.AnyAsync(c => columnTypes.Any(t => t == c.ColumnTypeId)))
-        {
-            ModelState.AddModelError("", "Неизвестный тип данных");
-            await CreateViewBag();
-            return View(priceList);
-        }
-
-        foreach (var column in priceList.Columns)
-        {
-            if (column.ColumnId != null)
-            {
-                var existingColumn = await _context.Columns
-                    .FirstOrDefaultAsync(x => x.Id == column.ColumnId);
-
-                if (existingColumn == null)
-                {
-                    ModelState.AddModelError("", "Неизвестный тип данных");
-                    await CreateViewBag();
-                    return View(priceList);
-                }
-
-                priceListEntity.Columns.Add(existingColumn);
-
-                continue;
-            }
-
-            switch (column.ColumnType)
-            {
-                case nameof(IntColumn):
-                    priceListEntity.Columns.Add(new Column
-                    {
-                        ColumnTypeId = nameof(IntColumn),
-                        Name = column.ColumnName
-                    });
-                    break;
-                case nameof(VarCharColumn):
-                    priceListEntity.Columns.Add(new Column
-                    {
-                        ColumnTypeId = nameof(VarCharColumn),
-                        Name = column.ColumnName
-                    });
-                    break;
-                case nameof(StringTextColumn):
-                    priceListEntity.Columns.Add(new Column
-                    {
-                        ColumnTypeId = nameof(StringTextColumn),
-                        Name = column.ColumnName
-                    });
-                    break;
-                default:
-                    return BadRequest(new
-                    {
-                        Errors = new[]
-                        {
-                            new
-                            {
-                                ErrorMessage = "Неизвестный тип данных",
-                            }
-                        }
-                    });
-            }
-        }
-
-        var entity = await _context.PriceList.AddAsync(priceListEntity);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Details), new { id = entity.Entity.PriceListId });
-    }
-
-    // GET: PriceLists/Edit/5
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var priceList = await _context.PriceList.FindAsync(id);
-        if (priceList == null)
-        {
-            return NotFound();
-        }
-        return View(priceList);
-    }
-
-    // POST: PriceLists/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("PriceListId,Name")] PriceList priceList)
-    {
-        if (id != priceList.PriceListId)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
-            {
-                _context.Update(priceList);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PriceListExists(priceList.PriceListId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        return View(priceList);
-    }
-
-    // GET: PriceLists/Delete/5
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var priceList = await _context.PriceList
-            .FirstOrDefaultAsync(m => m.PriceListId == id);
-        if (priceList == null)
-        {
-            return NotFound();
-        }
-
-        return View(priceList);
-    }
-
-    // POST: PriceLists/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
-    {
-        if (!await _context.PriceList.AnyAsync(x => x.PriceListId == id))
-        {
-            return NotFound();
-        }
-
-        await _context.PriceList.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
-
-        if (_context.ChangeTracker.HasChanges())
-        {
-            await _context.SaveChangesAsync();
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    private bool PriceListExists(int id)
-    {
-        return _context.PriceList.Any(e => e.PriceListId == id);
     }
 }

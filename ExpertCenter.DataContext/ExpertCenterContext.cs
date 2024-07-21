@@ -10,8 +10,8 @@ public class ExpertCenterContext : DbContext
     public DbSet<IntColumn> IntColumns { get; set; }
     public DbSet<VarCharColumn> VarCharColumns { get; set; }
     public DbSet<StringTextColumn> StringTextColumns { get; set; }
-    public DbSet<PriceList> PriceList { get; set; }
-    public DbSet<Product> Product { get; set; }
+    public DbSet<PriceList> PriceLists { get; set; }
+    public DbSet<Product> Products { get; set; }
 
     public ExpertCenterContext()
         : base()
