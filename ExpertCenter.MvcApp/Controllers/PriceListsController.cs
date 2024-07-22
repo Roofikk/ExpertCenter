@@ -56,12 +56,6 @@ public class PriceListsController : Controller
             .ThenInclude(x => x.ColumnValues)
             .SingleAsync(x => x.PriceListId == id);
 
-        var productsQuery = await _productsService.GetProductsAsync(id, new SortByModel
-        {
-            ColumnId = sortBy ?? "default",
-            IsDesc = isDesc
-        });
-
         var dict = new Dictionary<ColumnViewModel, Dictionary<int, string>>(priceList.Columns.Count);
 
         foreach (var column in priceList.Columns)
@@ -84,6 +78,12 @@ public class PriceListsController : Controller
                 }).ToDictionary(x => x.ProdId, x => x.Value)
             );
         }
+
+        var productsQuery = await _productsService.GetProductsQueryAsync(id, new SortByModel
+        {
+            ColumnId = sortBy ?? "default",
+            IsDesc = isDesc
+        });
 
         var model = new PriceListDetailsModel
         {

@@ -61,6 +61,7 @@ public class ExpertCenterContext : DbContext
 
         modelBuilder.Entity<Product>(e =>
         {
+            e.ToTable(tb => tb.UseSqlOutputClause(false));
             e.HasIndex(x => x.Article).HasDatabaseName("IX_Products_Article");
         });
 

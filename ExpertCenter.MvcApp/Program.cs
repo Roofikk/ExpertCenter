@@ -1,7 +1,8 @@
 using ExpertCenter.DataContext;
-using ExpertCenter.DataContext.Entities;
+using ExpertCenter.MvcApp.Hubs;
 using ExpertCenter.MvcApp.Services.PriceLists;
 using ExpertCenter.MvcApp.Services.Products;
+using ExpertCenter.MvcApp.Services.ProductTableDependency;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddExpertCenterContext(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<IPriceListsService, PriceListsService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<ProductsHub>();
+builder.Services.AddSingleton<ISubscribeProductTableDependency, SubscribeProductTableDependency>();
 
 var app = builder.Build();
 
@@ -30,6 +34,10 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ProductsHub>("/productHub");
+app.Services.GetService<ISubscribeProductTableDependency>()
+    ?.SubscribeTableDependency(app.Configuration.GetConnectionString("DefaultConnection")!);
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
