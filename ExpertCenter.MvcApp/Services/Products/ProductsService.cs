@@ -2,9 +2,7 @@
 using ExpertCenter.DataContext.Entities;
 using ExpertCenter.MvcApp.Models;
 using ExpertCenter.MvcApp.Models.Column;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 
 namespace ExpertCenter.MvcApp.Services.Products;
 
@@ -15,6 +13,23 @@ public class ProductsService : IProductsService
     public ProductsService(ExpertCenterContext context)
     {
         _context = context;
+    }
+
+    public async Task<int?> GetRandomArticleAsync(int priceListId)
+    {
+        int amountTries = 10;
+
+        while (amountTries-- > 0)
+        {
+            var randomArticle = new Random().Next(0, int.MaxValue);
+
+            if (!await _context.Products.AnyAsync(x => x.Article == randomArticle && x.PriceListId == priceListId))
+            {
+                return randomArticle;
+            }
+        }
+
+        return null;
     }
 
     public async Task<IQueryable<Product>> GetProductsAsync(int? priceListId = null, SortByModel? sortBy = null)

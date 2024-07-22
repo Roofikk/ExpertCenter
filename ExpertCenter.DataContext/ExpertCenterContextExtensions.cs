@@ -7,7 +7,7 @@ public static class ExpertCenterContextExtensions
 {
     public static IServiceCollection AddExpertCenterContext(this IServiceCollection services, string? connectionString = null)
     {
-        connectionString ??= @"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=Rufik2024;TrustServerCertificate=True;";
+        connectionString ??= @"Server=RUFIK-HONOR;Database=ExpertCenter;User=sa;Password=root1234;TrustServerCertificate=True;";
 
         return services.AddDbContext<ExpertCenterContext>(options =>
         {

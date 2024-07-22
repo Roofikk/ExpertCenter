@@ -35,26 +35,29 @@
                                 <a asp-action="Details"
                                    asp-route-id="@Model.PriceListId"
                                    asp-route-sortBy="@sortBy.ColumnId"
-                                   class="btn btn-sm btn-secondary"><span>&#8595;</span></a>
+                                   class="btn btn-sm btn-secondary"
+                                   onclick="show(@Model.PriceListId, 1, '@sortBy.ColumnId', false); return false;"><span>&#8595;</span></a>
                                 <a asp-action="Details"
                                    asp-route-id="@Model.PriceListId"
                                    asp-route-sortBy="@sortBy.ColumnId"
                                    asp-route-isDesc="true"
-                                   class="btn btn-sm btn-secondary"><span>&#8593;</span></a>
+                                   class="btn btn-sm btn-secondary"
+                                   onclick="show(@Model.PriceListId, 1, '@sortBy.ColumnId', true); return false;"><span>&#8593;</span></a>
                             </div>
                         </div>
                     }
                     <hr class="dropdown-divider" />
                     <a asp-action="Details"
                        asp-route-priceListId="@Model.PriceListId"
-                       class="dropdown-item">По умолчанию</a>
+                       class="dropdown-item"
+                       onclick="show(@Model.PriceListId, 1, 'default', false); return false;">По умолчанию</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <hr />
-<div>
+<div id="mainContent">
     <table class="table table-striped">
         <thead>
             <tr>
@@ -93,6 +96,75 @@
 @section Scripts
 {
     <script>
+        $(document).ready(function () {
+            var queryValues = splitQuery();
+            overridePaginationLinks(
+                @Model.PriceListId,
+                Number(queryValues?.pageIndex ?? 1),
+                queryValues?.sortBy ?? "default",
+                queryValues?.isDesc ?? false);
+        });
+
+        function splitQuery() {
+            return window.location.search.substring(1).split('&').reduce(function (map, obj) {
+                var parts = obj.split('=');
+
+                if (parts.length != 2) {
+                    return map;
+                }
+
+                parts[0][0] = parts[0][0].toLowerCase();
+                map[parts[0]] = parts[1];
+                return map;
+            }, {});
+        }
+
+        function show(id, pageIndex, sortBy, isDesc ) {
+            // для обновления страницы с текущими параметрами
+            // если эта функция нужна, можно раскомментировать строку ниже
+            // window.history.pushState("", "", "@Url.Action("Details", "PriceLists")/" + "?pageIndex=" + pageIndex + "&sortBy=" + sortBy + "&isDesc=" + isDesc);
+
+            $.ajax({
+                url: '@Url.Action("Details", "PriceLists")/' + '?pageIndex=' + pageIndex + '&sortBy=' + sortBy + '&isDesc=' + isDesc,
+                type: 'GET',
+                data: id,
+                success: function (response) {
+                    var html = $(response).find('#mainContent').html();
+                    $('#mainContent').html(html);
+                    overridePaginationLinks(id, Number(pageIndex), sortBy, isDesc);
+                },
+                error: function (xhr, status, error) {
+
+                }
+            })
+        }
+
+        function overridePaginationLinks(id, pageIndex, sortBy, isDesc) {
+            $('#paginationBar').find(function () {
+                var previousPage = $(this).find('a[id="previousPage"]');
+                previousPage.on('click', function () {
+                    show(id, pageIndex - 1, sortBy, isDesc);
+                    return false;
+                })
+
+                var nextPage = $(this).find('a[id="nextPage"]');
+                nextPage.on('click', function () {
+                    show(id, pageIndex + 1, sortBy, isDesc);
+                    return false;
+                })
+
+                $('a[id^="page"]').each(function () {
+                    console.log($(this).attr('id'));
+                    var currentPageIndex = $(this).attr('id').split('-')[1];
+                    $(this).on('click', function () {
+                        show(id, currentPageIndex, sortBy, isDesc);
+                        return false;
+                    })
+                })
+                //console.log(previousPage);
+            });
+        }
+
         function deleteProduct(id) {
             $.ajax({
                 url: '@Url.Action("Delete", "Products")/' + id,
@@ -102,11 +174,7 @@
                     $('body').append(response);
                     var deleteModal = $('#deleteModal');
                     var form = deleteModal.find('form');
-                    var queryValues = window.location.search.substring(1).split('&').reduce(function (map, obj) {
-                        var parts = obj.split('=');
-                        map[parts[0]] = parts[1];
-                        return map;
-                    }, {});
+                    var queryValues = splitQuery();
                     console.log(queryValues);
                     form.append(`<input name="PriceListId" value="@Model.PriceListId" type="hidden" />`);
                     form.append(`<input name="SortByModel.ColumnId" value="${queryValues?.sortBy ?? ""}" type="hidden" />`);

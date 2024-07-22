@@ -34,6 +34,7 @@ public class ProductsController : Controller
         return View(new ProductCreateModel
         {
             PriceListId = priceListId.Value,
+            Article = await _productsService.GetRandomArticleAsync(priceListId.Value) ?? 0,
             Columns = columns.Select(x => new ProductCreateColumnModel
             {
                 ColumnId = x.Id,
