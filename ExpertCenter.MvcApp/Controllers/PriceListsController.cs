@@ -37,7 +37,7 @@ public class PriceListsController : Controller
     }
 
     // GET: PriceLists/Details/5
-    public async Task<IActionResult> Details(int? id, int? pageIndex, string? sortBy = "default", bool isDesc = false)
+    public async Task<IActionResult> Details(int? id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
     {
         pageIndex ??= 1;
 
