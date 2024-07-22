@@ -115,6 +115,11 @@ public class ProductsService : IProductsService
 
     public async Task<Product> CreateAsync(ProductCreateModel model)
     {
+        if (await _context.Products.AnyAsync(x => x.Article == model.Article && x.PriceListId == model.PriceListId))
+        {
+            throw new ArgumentException("Нельзя создать товар с уже существующим артикулом", $"{nameof(model.Article)}: {model.Article}");
+        }
+
         var createdProduct = new Product
         {
             PriceListId = model.PriceListId,
@@ -122,7 +127,23 @@ public class ProductsService : IProductsService
             Article = model.Article,
         };
 
-        foreach (var column in model.Columns)
+        var existingColumns = await _context.Columns
+            .Where(x => x.PriceLists.Select(y => y.PriceListId).Any(id => id == model.PriceListId))
+            .ToListAsync();
+
+        var group = model.Columns.Join(existingColumns, x => x.ColumnId, y => y.Id, (x, y) => new
+        {
+            x.ColumnId,
+            y.ColumnTypeId,
+            x.Value,
+        }).ToList();
+
+        if (group.Count != existingColumns.Count)
+        {
+            throw new ArgumentException("Неверные типы данных", nameof(model.Columns));
+        }
+
+        foreach (var column in group)
         {
             switch (column.ColumnTypeId)
             {

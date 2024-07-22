@@ -50,14 +50,13 @@ public class ProductsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ModelState.AddModelError($"Columns", "Некорректное значение");
+            ModelState.AddModelError("Некорректное значение", ModelState.Values.SelectMany(x => x.Errors).First().ErrorMessage);
             return View(product);
         }
 
-        if (await _context.Products.AnyAsync(x => x.PriceListId == product.PriceListId && x.Article == product.Article))
+        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == product.PriceListId))
         {
-            ModelState.AddModelError("Article", "Такой артикул уже существует");
-            return View(product);
+            return NotFound("Несуществующий прайс-лист");
         }
 
         try
@@ -66,8 +65,7 @@ public class ProductsController : Controller
         }
         catch (Exception e)
         {
-            ModelState.AddModelError($"Ошибка при создании товара: {product.ProductName}", e.Message);
-            return View(product);
+            return NotFound(e.Message);
         }
 
         await _context.SaveChangesAsync();
@@ -105,12 +103,26 @@ public class ProductsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(ProductDeleteModel model)
     {
-        if (!await _context.Products.AnyAsync(x => x.ProductId == model.ProductId))
+        // Данный вариант не работает с тестами. Пока не разобрался почему LINQ ExecuteDeleteAsync не работает именно в тестах.
+        // При запуске приложения удаление работает нормально.
+        //if (!await _context.Products.AnyAsync(x => x.ProductId == model.ProductId))
+        //{
+        //    return NotFound();
+        //}
+
+        //await _context.Products.Where(x => x.ProductId == model.ProductId).ExecuteDeleteAsync();
+
+        var product = await _context.Products.FindAsync(model.ProductId);
+
+        if (product == null)
         {
             return NotFound();
         }
 
-        await _context.Products.Where(x => x.ProductId == model.ProductId).ExecuteDeleteAsync();
+        model.PriceListId = product.PriceListId;
+
+        _context.Products.Remove(product);
+        await _context.SaveChangesAsync();
 
         if (_context.ChangeTracker.HasChanges())
         {

@@ -265,12 +265,23 @@ public class PriceListsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        // Данный вариант не работает с тестами. Пока не разобрался почему LINQ ExecuteDeleteAsync не работает именно в тестах.
+        // При запуске приложения удаление работает нормально.
+        //if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        //{
+        //    return NotFound();
+        //}
+
+        //await _context.PriceLists.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
+
+        var priceList = await _context.PriceLists.FindAsync(id);
+
+        if (priceList == null)
         {
             return NotFound();
         }
 
-        await _context.PriceLists.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
+        _context.PriceLists.Remove(priceList);
 
         if (_context.ChangeTracker.HasChanges())
         {

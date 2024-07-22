@@ -30,13 +30,10 @@ public class PriceListsControllerTests
     [Fact]
     public async Task GetPriceLists_ReturnsAllPriceLists()
     {
-        // Act
-        await _context.InitializeAsync();
-        var priceLists = GetPriceLists();
+        // Arrange
+        await InitializeAsync();
 
-        await _context.PriceLists.AddRangeAsync(priceLists);
-        await _context.SaveChangesAsync();
-        var priceListsService = new Mock<IPriceListsService>();
+        // Act
         var result = await _controller.Index();
 
         // Assert
@@ -51,12 +48,10 @@ public class PriceListsControllerTests
     [Fact]
     public async Task GetDetailsOfPriceList_ReturnDetails()
     {
-        // Act
-        await _context.InitializeAsync();
-        var priceLists = GetPriceLists();
+        // Arrange
+        await InitializeAsync();
 
-        await _context.PriceLists.AddRangeAsync(priceLists);
-        await _context.SaveChangesAsync();
+        // Act
         var result = await _controller.Details(1);
 
         // Assert
@@ -72,12 +67,10 @@ public class PriceListsControllerTests
     [Fact]
     public async Task GetDetailsOfPriceList_ReturnsNotFound()
     {
-        // Act
-        await _context.InitializeAsync();
-        var priceLists = GetPriceLists();
+        // Arrange
+        await InitializeAsync();
 
-        await _context.PriceLists.AddRangeAsync(priceLists);
-        await _context.SaveChangesAsync();
+        // Act
         var result = await _controller.Details(3);
 
         // Assert
@@ -89,8 +82,10 @@ public class PriceListsControllerTests
     [Fact]
     public async Task CreatePriceList_ReturnsView()
     {
-        // Act
+        // Arrange
         await _context.InitializeAsync();
+
+        // Act
         var result = await _controller.Create();
 
         // Assert
@@ -101,14 +96,10 @@ public class PriceListsControllerTests
     [Fact]
     public async Task CreatePriceList_ReturnsCreated()
     {
+        // Arrange
+        await InitializeAsync();
+
         // Act
-        await _context.InitializeAsync();
-
-        await _context.PriceLists.AddRangeAsync(GetPriceLists());
-        await _context.Columns.AddRangeAsync(GetColumns());
-        await _context.SaveChangesAsync();
-
-        // Assert
         var result = await _controller.Create(new PriceListCreateModel
         {
             Name = "PriceList3",
@@ -122,16 +113,146 @@ public class PriceListsControllerTests
     }
 
     [Fact]
-    public async Task CreatePriceList_ReturnsBadRequest()
+    public async Task CreatePriceListWithDuplicateName_ShouldReturnsCreate()
     {
-        // Act
-        await _context.InitializeAsync();
+        // Arrange
+        await InitializeAsync();
 
-        await _context.PriceLists.AddRangeAsync(GetPriceLists());
-        await _context.Columns.AddRangeAsync(GetColumns());
-        await _context.SaveChangesAsync();
+        // Act
+        var result = await _controller.Create(new PriceListCreateModel
+        {
+            Name = "PriceList1",
+        });
 
         // Assert
+        Assert.IsType<RedirectToActionResult>(result);
+        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirectToActionResult.ActionName);
+        Assert.Equal(3, redirectToActionResult.RouteValues!["id"]);
+
+        var viewResult = Assert.IsType<ViewResult>(await _controller.Details(3));
+        var model = Assert.IsAssignableFrom<PriceListDetailsModel>(viewResult.Model);
+        Assert.Equal("PriceList1", model.PriceListName);
+    }
+
+    [Fact]
+    public async Task CreatePriceListWithColumns_ReturnsCreated()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.Create(new PriceListCreateModel
+        {
+            Name = "PriceList3",
+            Columns = new List<ColumnCreateModel>
+            {
+                new ColumnCreateModel
+                {
+                    ColumnName = "Int column",
+                    ColumnType = "IntColumn",
+                },
+                new ColumnCreateModel
+                {
+                    ColumnName = "String text column",
+                    ColumnType = "StringTextColumn",
+                },
+            },
+        });
+
+        // Assert
+        Assert.IsType<RedirectToActionResult>(result);
+        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirectToActionResult.ActionName);
+        Assert.Equal(3, redirectToActionResult.RouteValues!["id"]);
+
+        var viewResult = Assert.IsType<ViewResult>(await _controller.Details(3));
+        var model = Assert.IsAssignableFrom<PriceListDetailsModel>(viewResult.Model);
+        Assert.Equal(2, model.ProdColumns.Keys.Count);
+        Assert.Equal("Int column", model.ProdColumns.ElementAt(0).Key.ColumnName);
+        Assert.Equal("String text column", model.ProdColumns.ElementAt(1).Key.ColumnName);
+    }
+
+    [Fact]
+    public async Task CreatePriceListWithExistingColumns_ShouldCreated()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.Create(new PriceListCreateModel
+        {
+            Name = "PriceList3",
+            Columns = new List<ColumnCreateModel>
+            {
+                new ColumnCreateModel
+                {
+                    ColumnId = 1,
+                },
+                new ColumnCreateModel
+                {
+                    ColumnId = 2,
+                },
+            },
+        });
+
+        // Assert
+        Assert.IsType<RedirectToActionResult>(result);
+        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirectToActionResult.ActionName);
+        Assert.Equal(3, redirectToActionResult.RouteValues!["id"]);
+
+        var viewResult = Assert.IsType<ViewResult>(await _controller.Details(3));
+        var model = Assert.IsAssignableFrom<PriceListDetailsModel>(viewResult.Model);
+        Assert.Equal(2, model.ProdColumns.Keys.Count);
+        Assert.Equal("Column1", model.ProdColumns.ElementAt(0).Key.ColumnName);
+        Assert.Equal("Column2", model.ProdColumns.ElementAt(1).Key.ColumnName);
+    }
+
+    [Fact]
+    public async Task CreatePriceListWithExistingAndNewColumns_ShouldCreated()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.Create(new PriceListCreateModel
+        {
+            Name = "PriceList3",
+            Columns = new List<ColumnCreateModel>
+            {
+                new ColumnCreateModel
+                {
+                    ColumnId = 1,
+                },
+                new ColumnCreateModel
+                {
+                    ColumnName = "String text column",
+                    ColumnType = "StringTextColumn",
+                },
+            },
+        });
+
+        // Assert
+        Assert.IsType<RedirectToActionResult>(result);
+        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Details", redirectToActionResult.ActionName);
+        Assert.Equal(3, redirectToActionResult.RouteValues!["id"]);
+
+        var viewResult = Assert.IsType<ViewResult>(await _controller.Details(3));
+        var model = Assert.IsAssignableFrom<PriceListDetailsModel>(viewResult.Model);
+        Assert.Equal(2, model.ProdColumns.Keys.Count);
+        Assert.Equal("Column1", model.ProdColumns.ElementAt(0).Key.ColumnName);
+        Assert.Equal("String text column", model.ProdColumns.ElementAt(1).Key.ColumnName);
+    }
+
+    [Fact]
+    public async Task CreatePriceListWithInvalidColumnType_ShouldReturnsBadRequest()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
         var result = await _controller.Create(new PriceListCreateModel
         {
             Name = "PriceList1",
@@ -139,16 +260,88 @@ public class PriceListsControllerTests
             {
                 new ColumnCreateModel
                 {
-                    ColumnType = "RanodmColumn",
+                    ColumnType = "RandomColumn",
                     ColumnName = "Name",
                 },
             }
         });
 
         // Assert
-        Assert.IsType<BadRequestResult>(result);
-        var badRequestResult = Assert.IsType<BadRequestResult>(result);
-        Assert.Equal(400, badRequestResult.StatusCode);
+        Assert.IsType<ViewResult>(result);
+        Assert.False(_controller.ModelState.IsValid);
+        Assert.True(_controller.ModelState.ErrorCount > 0);
+        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
+            .FirstOrDefault(x => x.ErrorMessage.Contains("Неизвестный тип")) != null);
+        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
+            .FirstOrDefault(x => x.ErrorMessage.Contains("RandomColumn")) != null);
+    }
+
+    [Fact]
+    public async Task CreatePriceListWithNonExistentColumn_ShouldReturnsBadRequest()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.Create(new PriceListCreateModel
+        {
+            Name = "PriceList1",
+            Columns = new List<ColumnCreateModel>
+            {
+                new ColumnCreateModel
+                {
+                    ColumnId = 2534,
+                },
+            }
+        });
+
+        // Assert
+        Assert.IsType<ViewResult>(result);
+        Assert.False(_controller.ModelState.IsValid);
+        Assert.True(_controller.ModelState.ErrorCount > 0);
+        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
+            .FirstOrDefault(x => x.ErrorMessage.Contains("Неизвестный тип")) != null);
+        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
+            .FirstOrDefault(x => x.ErrorMessage.Contains("2534")) != null);
+    }
+
+    [Fact]
+    public async Task DeletePriceList_ReturnDetails()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.DeleteConfirmed(1);
+
+        // Assert
+        Assert.IsType<RedirectToActionResult>(result);
+        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Index", redirectToActionResult.ActionName);
+    }
+
+    [Fact]
+    public async Task DeletePriceList_ReturnsNotFound()
+    {
+        // Arrange
+        await InitializeAsync();
+
+        // Act
+        var result = await _controller.DeleteConfirmed(-1);
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result);
+        var notFoundResult = Assert.IsType<NotFoundResult>(result);
+        Assert.Equal(404, notFoundResult.StatusCode);
+    }
+
+    private async Task InitializeAsync()
+    {
+        await _context.InitializeAsync();
+
+        await _context.PriceLists.AddRangeAsync(GetPriceLists());
+        await _context.Columns.AddRangeAsync(GetColumns());
+        await _context.SaveChangesAsync();
     }
 
     private List<PriceList> GetPriceLists()
@@ -198,16 +391,19 @@ public class PriceListsControllerTests
         [
             new Column
             {
+                Id = 1,
                 ColumnTypeId = "IntColumn",
                 Name = "Column1",
             },
             new Column
             {
+                Id = 2,
                 ColumnTypeId = "StringTextColumn",
                 Name = "Column2",
             },
             new Column
             {
+                Id = 3,
                 ColumnTypeId = "VarCharColumn",
                 Name = "Column3",
             }
