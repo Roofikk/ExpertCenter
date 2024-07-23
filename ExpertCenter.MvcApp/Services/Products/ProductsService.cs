@@ -3,6 +3,7 @@ using ExpertCenter.DataContext.Entities;
 using ExpertCenter.MvcApp.Models;
 using ExpertCenter.MvcApp.Models.Column;
 using ExpertCenter.MvcApp.Models.PriceList;
+using ExpertCenter.MvcApp.Models.Product;
 using Microsoft.EntityFrameworkCore;
 
 namespace ExpertCenter.MvcApp.Services.Products;
@@ -31,19 +32,6 @@ public class ProductsService : IProductsService
         }
 
         return null;
-    }
-
-    public async Task<IEnumerable<ProductDetailsModel>> GetProductsDetailsAsync(int priceListId)
-    {
-        return await _context.Products
-            .Where(x => x.PriceListId == priceListId)
-            .Select(x => new ProductDetailsModel
-            {
-                Article = x.Article,
-                ProductId = x.ProductId,
-                ProductName = x.Name,
-            })
-            .ToListAsync();
     }
 
     public async Task<IQueryable<Product>> GetProductsQueryAsync(int? priceListId = null, SortByModel? sortBy = null)

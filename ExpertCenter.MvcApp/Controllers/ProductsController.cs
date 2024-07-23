@@ -73,69 +73,24 @@ public class ProductsController : Controller
     }
 
     // GET: Products/Delete/5
-    public async Task<IActionResult> Delete(int? id)
+    [HttpGet]
+    public async Task<IActionResult> Delete(int id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var product = await _context.Products
-            .Include(p => p.PriceList)
-            .Select(x => new ProductDeleteModel
-            {
-                ProductId = x.ProductId,
-                ProductName = x.Name,
-                PriceListName = x.PriceList.Name
-            })
-            .FirstOrDefaultAsync(m => m.ProductId == id);
+        var product = await _context.Products.FindAsync(id);
 
         if (product == null)
         {
             return NotFound();
         }
-
-        return PartialView("Product/_Delete", product);
-    }
-
-    // POST: Products/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(ProductDeleteModel model)
-    {
-        // Данный вариант не работает с тестами. Пока не разобрался почему LINQ ExecuteDeleteAsync не работает именно в тестах.
-        // При запуске приложения удаление работает нормально.
-        //if (!await _context.Products.AnyAsync(x => x.ProductId == model.ProductId))
-        //{
-        //    return NotFound();
-        //}
-
-        //await _context.Products.Where(x => x.ProductId == model.ProductId).ExecuteDeleteAsync();
-
-        var product = await _context.Products.FindAsync(model.ProductId);
-
-        if (product == null)
-        {
-            return NotFound();
-        }
-
-        model.PriceListId = product.PriceListId;
 
         _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
 
         if (_context.ChangeTracker.HasChanges())
         {
             await _context.SaveChangesAsync();
         }
 
-        return RedirectToAction("Details", "PriceLists", new
-        {
-            id = model.PriceListId,
-            pageIndex = model.PageIndex,
-            sortBy = model.SortByModel?.ColumnId ?? "default",
-            isDesc = model.SortByModel?.IsDesc ?? false
-        });
+        return NoContent();
     }
 
     private bool ProductExists(int id)

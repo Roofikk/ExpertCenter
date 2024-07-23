@@ -144,7 +144,7 @@ public class ProductsControllerTests
     }
 
     [Fact]
-    public async Task DeleteProduct_ReturnsDetails()
+    public async Task DeleteProduct_ReturnNoContent()
     {
         // Arrange
         await InitializeAsync();
@@ -158,18 +158,12 @@ public class ProductsControllerTests
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _controller.DeleteConfirmed(new ProductDeleteModel
-        {
-            
-            ProductId = 1,
-        });
+        var result = await _controller.Delete(1);
 
         // Assert
-        Assert.IsType<RedirectToActionResult>(result);
-        var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
-        Assert.Equal("Details", redirectToActionResult.ActionName);
-        Assert.Equal("PriceLists", redirectToActionResult.ControllerName);
-        Assert.Equal(1, redirectToActionResult.RouteValues!["id"]);
+        Assert.IsType<NoContentResult>(result);
+        var noContentResult = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContentResult.StatusCode);
     }
 
     [Fact]
@@ -179,10 +173,7 @@ public class ProductsControllerTests
         await InitializeAsync();
 
         // Act
-        var result = await _controller.DeleteConfirmed(new ProductDeleteModel
-        {
-            ProductId = 3,
-        });
+        var result = await _controller.Delete(3);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);

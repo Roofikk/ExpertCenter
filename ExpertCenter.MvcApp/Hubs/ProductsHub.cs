@@ -21,7 +21,10 @@ public class ProductsHub : Hub
 
     public async Task SendProducts(int priceListId)
     {
-        var products = await _productsService.GetProductsDetailsAsync(priceListId);
-        await Clients.All.SendAsync("ReceiveProducts", products);
+        await Clients.All.SendAsync("ReceiveProducts", new
+        {
+            PriceListId = priceListId,
+            Message = $"Price list has been updated"
+        });
     }
 }
