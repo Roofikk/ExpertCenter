@@ -5,6 +5,7 @@
     ViewData["Title"] = Model.PriceListName;
 }
 
+<input type="hidden" id="priceListId" value="@Model.PriceListId" />
 <h1>Прайс лист: @Model.PriceListName</h1>
 <div class="row justify-content-between">
     <div class="col-auto">
@@ -35,42 +36,49 @@
                                 <a asp-action="Details"
                                    asp-route-id="@Model.PriceListId"
                                    asp-route-sortBy="@sortBy.ColumnId"
-                                   class="btn btn-sm btn-secondary"><span>&#8595;</span></a>
+                                   class="btn btn-sm btn-secondary"
+                                   onclick="show(@Model.PriceListId, 1, '@sortBy.ColumnId', false); return false;"><span>&#8595;</span></a>
                                 <a asp-action="Details"
                                    asp-route-id="@Model.PriceListId"
                                    asp-route-sortBy="@sortBy.ColumnId"
                                    asp-route-isDesc="true"
-                                   class="btn btn-sm btn-secondary"><span>&#8593;</span></a>
+                                   class="btn btn-sm btn-secondary"
+                                   onclick="show(@Model.PriceListId, 1, '@sortBy.ColumnId', true); return false;"><span>&#8593;</span></a>
                             </div>
                         </div>
                     }
                     <hr class="dropdown-divider" />
                     <a asp-action="Details"
                        asp-route-priceListId="@Model.PriceListId"
-                       class="dropdown-item">По умолчанию</a>
+                       class="dropdown-item"
+                       onclick="show(@Model.PriceListId, 1, 'default', false); return false;">По умолчанию</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <hr />
-<div>
+<div id="mainContent">
     <table class="table table-striped">
-        <thead>
+        <thead id="tableHead">
             <tr>
-                <th>Наименование</th>
-                <th>Артикул</th>
+                <th class="product-name">Наименование</th>
+                <th class="product-article">Артикул</th>
                 @foreach (var column in Model.ProdColumns)
                 {
-                    <th>@column.Key.ColumnName</th>
+                    <th class="product-column-@column.Key.ColumnId">
+                        <input name="ProductColumnId" type="hidden" value="@column.Key.ColumnId" />
+                        @column.Key.ColumnName
+                    </th>
                 }
                 <th>Действия</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tableBody">
             @foreach (var item in Model.Products)
             {
                 <tr>
+                    <input name="ProductId" type="hidden" value="@item.ProductId" />
                     <td>@item.ProductName</td>
                     <td>@item.Article</td>
                     @foreach (var column in Model.ProdColumns)
@@ -78,7 +86,7 @@
                         <td>@column.Value[item.ProductId]</td>
                     }
                     <td>
-                        <button class="btn btn-sm btn-danger" onclick="deleteProduct(@item.ProductId)">Удалить</button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="showModalDeleteProduct(@item.ProductId)">Удалить</button>
                     </td>
                 </tr>
             }
@@ -90,36 +98,104 @@
     </div>
 </div>
 
+@await Html.PartialAsync("Product/_Delete")
+
 @section Scripts
 {
+    <script src="~/js/signalr/dist/browser/signalr.js"></script>
+    <script src="~/js/product.js"></script>
+
     <script>
-        function deleteProduct(id) {
+        $(document).ready(function () {
+            var queryValues = splitQuery();
+            overridePaginationLinks(
+                @Model.PriceListId,
+                Number(queryValues?.pageIndex ?? 1),
+                queryValues?.sortBy ?? "default",
+                queryValues?.isDesc ?? false);
+        });
+
+        function splitQuery() {
+            return window.location.search.substring(1).split('&').reduce(function (map, obj) {
+                var parts = obj.split('=');
+
+                if (parts.length != 2) {
+                    return map;
+                }
+
+                parts[0][0] = parts[0][0].toLowerCase();
+                map[parts[0]] = parts[1];
+                return map;
+            }, {});
+        }
+
+        function show(id, pageIndex, sortBy, isDesc) {
+            window.history.replaceState(null, "", "@Url.Action("Details", "PriceLists")/" + "?pageIndex=" + pageIndex + "&sortBy=" + sortBy + "&isDesc=" + isDesc);
+
             $.ajax({
-                url: '@Url.Action("Delete", "Products")/' + id,
+                url: '@Url.Action("Details", "PriceLists")/' + '?pageIndex=' + pageIndex + '&sortBy=' + sortBy + '&isDesc=' + isDesc,
                 type: 'GET',
                 data: id,
                 success: function (response) {
-                    $('body').append(response);
-                    var deleteModal = $('#deleteModal');
-                    var form = deleteModal.find('form');
-                    var queryValues = window.location.search.substring(1).split('&').reduce(function (map, obj) {
-                        var parts = obj.split('=');
-                        map[parts[0]] = parts[1];
-                        return map;
-                    }, {});
-                    console.log(queryValues);
-                    form.append(`<input name="PriceListId" value="@Model.PriceListId" type="hidden" />`);
-                    form.append(`<input name="SortByModel.ColumnId" value="${queryValues?.sortBy ?? ""}" type="hidden" />`);
-                    form.append(`<input name="SortByModel.IsDesc" value="${queryValues?.isDesc ?? false}" type="hidden" />`);
-                    form.append(`<input name="PageIndex" value="${queryValues?.pageIndex ?? 1}" type="hidden" />`);
-                    $('#deleteModal').modal('show');
-
-                    $('#deleteModal').on('hidden.bs.modal', function () {
-                        $(this).remove();
-                    });
+                    var html = $(response).find('#mainContent').html();
+                    $('#mainContent').html(html);
+                    overridePaginationLinks(id, Number(pageIndex), sortBy, isDesc);
                 },
                 error: function (xhr, status, error) {
+
                 }
+            })
+        }
+
+        function overridePaginationLinks(id, pageIndex, sortBy, isDesc) {
+            $('#paginationBar').find(function () {
+                var previousPage = $(this).find('a[id="previousPage"]');
+                previousPage.on('click', function () {
+                    show(id, pageIndex - 1, sortBy, isDesc);
+                    return false;
+                })
+
+                var nextPage = $(this).find('a[id="nextPage"]');
+                nextPage.on('click', function () {
+                    show(id, pageIndex + 1, sortBy, isDesc);
+                    return false;
+                })
+
+                $('a[id^="page"]').each(function () {
+                    var currentPageIndex = $(this).attr('id').split('-')[1];
+                    $(this).on('click', function () {
+                        show(id, currentPageIndex, sortBy, isDesc);
+                        return false;
+                    })
+                })
+            });
+        }
+
+        function showModalDeleteProduct(id) {
+            var deleteModal = $('#deleteModal');
+            deleteModal.modal('show');
+            deleteModal.find('input[name="ProductId"]').val(id);
+
+            deleteModal.find('form').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '@Url.Action("Delete", "Products")/' + id,
+                    type: 'GET',
+                    success: function (response) {
+                        $('body').append(response);
+                    },
+                    error: function (xhr, status, error) {
+                        window.alert("Не удалось удалить продукт. Обновите страницу");
+                        console.log(xhr, status, error);
+                    }
+                });
+
+                deleteModal.modal('hide');
+            });
+
+            deleteModal.on('hidden.bs.modal', function () {
+                $(this).find('form').off('submit');
             });
         }
     </script>

@@ -7,6 +7,7 @@ using ExpertCenter.MvcApp.Models.PriceList;
 using ExpertCenter.MvcApp.Models;
 using ExpertCenter.MvcApp.Services.Products;
 using ExpertCenter.MvcApp.Services.PriceLists;
+using ExpertCenter.MvcApp.Models.Product;
 
 namespace ExpertCenter.MvcApp.Controllers;
 
@@ -28,6 +29,7 @@ public class PriceListsController : Controller
     public async Task<IActionResult> Index()
     {
         return View(await _context.PriceLists
+            .AsNoTracking()
             .OrderByDescending(x => x.PriceListId)
             .Select(x => new PriceListViewModel
             {
@@ -37,9 +39,10 @@ public class PriceListsController : Controller
     }
 
     // GET: PriceLists/Details/5
-    public async Task<IActionResult> Details(int? id, int? pageIndex, string? sortBy = "default", bool isDesc = false)
+    public async Task<IActionResult> Details(int? id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
     {
         pageIndex ??= 1;
+        pageIndex = pageIndex <= 0 ? 1 : pageIndex;
 
         if (id == null)
         {
@@ -52,15 +55,10 @@ public class PriceListsController : Controller
         }
 
         var priceList = await _context.PriceLists
+            .AsNoTracking()
             .Include(x => x.Columns)
             .ThenInclude(x => x.ColumnValues)
             .SingleAsync(x => x.PriceListId == id);
-
-        var productsQuery = await _productsService.GetProductsAsync(id, new SortByModel
-        {
-            ColumnId = sortBy ?? "default",
-            IsDesc = isDesc
-        });
 
         var dict = new Dictionary<ColumnViewModel, Dictionary<int, string>>(priceList.Columns.Count);
 
@@ -69,6 +67,7 @@ public class PriceListsController : Controller
             dict.Add(
                 new ColumnViewModel
                 {
+                    ColumnId = column.Id,
                     ColumnName = column.Name
                 },
                 column.ColumnValues.Select(x => new
@@ -85,12 +84,22 @@ public class PriceListsController : Controller
             );
         }
 
+        var productsQuery = await _productsService.GetProductsQueryAsync(id, new SortByModel
+        {
+            ColumnId = sortBy ?? "default",
+            IsDesc = isDesc
+        });
+
+        var totalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10) == 0 
+            ? 1 : (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10);
+        var currentPage = pageIndex.Value <= totalPages ? pageIndex.Value : totalPages;
+
         var model = new PriceListDetailsModel
         {
             PaginationBarModel = new PaginationBarModel
             {
-                CurrentPage = pageIndex.Value,
-                TotalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10),
+                CurrentPage = currentPage,
+                TotalPages = totalPages,
                 ActionName = "Details",
                 ControllerName = "PriceLists",
                 RouteValues = new Dictionary<string, string>
@@ -140,9 +149,10 @@ public class PriceListsController : Controller
         ];
 
         model.Products = await productsQuery
-            .Skip((pageIndex.Value - 1) * 10)
+            .Skip((currentPage - 1) * 10)
             .Take(10)
-            .Select(x => new ProductDetailsModel
+            .AsNoTracking()
+            .Select(x => new ProductViewIndexModel
             {
                 Article = x.Article,
                 ProductId = x.ProductId,
@@ -156,6 +166,66 @@ public class PriceListsController : Controller
         }
 
         return View(model);
+    }
+
+    public async Task<IActionResult> DetailsRaw(int id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
+    {
+        pageIndex ??= 1;
+
+        var productsQuery = await _productsService.GetProductsQueryAsync(id, new SortByModel
+        {
+            ColumnId = sortBy ?? "default",
+            IsDesc = isDesc
+        });
+
+        var totalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10);
+        var currentPage = pageIndex.Value <= totalPages ? pageIndex.Value : totalPages;
+
+        var result = new
+        {
+            Products = await productsQuery
+                .Include(x => x.ColumnValues)
+                .ThenInclude(x => x.Column)
+                .AsNoTracking()
+                .Skip((currentPage - 1) * 10)
+                .Take(10)
+                .Select(x => new ProductDetailModel
+                {
+                    Article = x.Article,
+                    ProductId = x.ProductId,
+                    ProductName = x.Name,
+                    Columns = x.ColumnValues.Select(x => new ProductColumnDetailModel
+                    {
+                        ColumnId = x.ColumnId,
+                        Value = x.Value,
+                    })
+                })
+                .ToListAsync(),
+            PaginationBarModel = new PaginationBarModel
+            {
+                ActionName = "Details",
+                ControllerName = "PriceLists",
+                CurrentPage = currentPage,
+                TotalPages = totalPages,
+                RouteValues = new Dictionary<string, string>
+                {
+                    {
+                        "id",
+                        id.ToString()!
+                    },
+                    {
+                        "sortBy",
+                        sortBy!
+                    },
+                    {
+                        "isDesc",
+                        isDesc.ToString()
+                    }
+                }
+            }
+        };
+
+        return Json(result);
     }
 
     // GET: PriceLists/Create
@@ -173,8 +243,7 @@ public class PriceListsController : Controller
         if (!ModelState.IsValid)
         {
             ModelState.AddModelError("", "Заполните все обязательные поля");
-            await CreateViewBagWithExistingColumns();
-            return View(priceList);
+            return BadRequest(ModelState);
         }
 
         try
@@ -187,8 +256,7 @@ public class PriceListsController : Controller
         catch (Exception e)
         {
             ModelState.AddModelError($"Ошибка при создании прайс листа: {priceList.Name}", e.Message);
-            await CreateViewBagWithExistingColumns();
-            return View(priceList);
+            return BadRequest(ModelState);
         }
     }
 
@@ -205,6 +273,7 @@ public class PriceListsController : Controller
         {
             return NotFound();
         }
+
         return View(priceList);
     }
 
@@ -265,12 +334,23 @@ public class PriceListsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        // Данный вариант не работает с тестами. Пока не разобрался почему LINQ ExecuteDeleteAsync не работает именно в тестах.
+        // При запуске приложения удаление работает нормально.
+        //if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == id))
+        //{
+        //    return NotFound();
+        //}
+
+        //await _context.PriceLists.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
+
+        var priceList = await _context.PriceLists.FindAsync(id);
+
+        if (priceList == null)
         {
             return NotFound();
         }
 
-        await _context.PriceLists.Where(x => x.PriceListId == id).ExecuteDeleteAsync();
+        _context.PriceLists.Remove(priceList);
 
         if (_context.ChangeTracker.HasChanges())
         {

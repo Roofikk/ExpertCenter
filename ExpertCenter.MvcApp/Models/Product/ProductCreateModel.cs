@@ -1,16 +1,15 @@
-﻿using ExpertCenter.MvcApp.Models.PriceList;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ExpertCenter.MvcApp.Models.Column;
 
 public class ProductCreateModel
 {
     public int PriceListId { get; set; }
+    [Required(ErrorMessage = "Поле не может быть пустым")]
     [Display(Name = "Название товара")]
-    [Required(ErrorMessage = "Необходимо указать название товара")]
     public string ProductName { get; set; } = null!;
-    [Display(Name = "Артикул")]
     [Required(ErrorMessage = "Необходимо указать артикул")]
+    [Display(Name = "Артикул")]
     public int Article { get; set; }
     public List<ProductCreateColumnModel> Columns { get; set; } = [];
 }

@@ -27,7 +27,7 @@ public class ExpertCenterContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer(@"Server=RufikDesktop;Database=ExpertCenter;User=sa;Password=root1234;TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer(@"Server=RUFIKDESKTOP;Database=ExpertCenter;User=sa;Password=root1234;TrustServerCertificate=True;");
         }
     }
 
@@ -57,6 +57,12 @@ public class ExpertCenterContext : DbContext
             e.HasMany(x => x.Columns)
                 .WithOne(x => x.ColumnType)
                 .HasForeignKey(x => x.ColumnTypeId);
+        });
+
+        modelBuilder.Entity<Product>(e =>
+        {
+            e.ToTable(tb => tb.UseSqlOutputClause(false));
+            e.HasIndex(x => x.Article).HasDatabaseName("IX_Products_Article");
         });
 
         modelBuilder.Entity<PriceList>(e =>

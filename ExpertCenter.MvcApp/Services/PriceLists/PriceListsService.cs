@@ -21,15 +21,6 @@ public class PriceListsService : IPriceListsService
             Name = model.Name
         };
 
-        var columnTypes = model.Columns
-            .Where(c => c.ColumnId == null)
-            .Select(c => c.ColumnType).ToList();
-
-        if (columnTypes.Count != 0 && !await _context.ColumnTypes.AnyAsync(c => columnTypes.Any(t => t == c.ColumnTypeId)))
-        {
-            throw new ArgumentException("Неизвестный тип данных");
-        }
-
         var existingColumns = await _context.Columns
             .Where(c => model.Columns.Select(t => t.ColumnId).Any(t => c.Id == t))
             .ToListAsync();
@@ -40,7 +31,8 @@ public class PriceListsService : IPriceListsService
             {
                 var existingColumn = existingColumns
                     .FirstOrDefault(x => x.Id == column.ColumnId) ??
-                    throw new ArgumentException("Неизвестный тип данных");
+                    throw new ArgumentException($"Неизвестный тип данных. " +
+                        $"ID: {column.ColumnId}, Название: {column.ColumnName ?? "пусто"}, тип: {column.ColumnType ?? "пусто"}", "Columns");
 
                 priceListEntity.Columns.Add(existingColumn);
                 continue;
@@ -70,7 +62,7 @@ public class PriceListsService : IPriceListsService
                     });
                     break;
                 default:
-                    throw new ArgumentException("Неизвестный тип данных");
+                    throw new ArgumentException($"Неизвестный тип данных. Название: {column.ColumnName}, тип: {column.ColumnType}", "ColumnTypes");
             }
         }
 
