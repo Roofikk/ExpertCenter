@@ -42,6 +42,7 @@ public class PriceListsController : Controller
     public async Task<IActionResult> Details(int? id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
     {
         pageIndex ??= 1;
+        pageIndex = pageIndex <= 0 ? 1 : pageIndex;
 
         if (id == null)
         {
@@ -89,12 +90,16 @@ public class PriceListsController : Controller
             IsDesc = isDesc
         });
 
+        var totalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10) == 0 
+            ? 1 : (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10);
+        var currentPage = pageIndex.Value <= totalPages ? pageIndex.Value : totalPages;
+
         var model = new PriceListDetailsModel
         {
             PaginationBarModel = new PaginationBarModel
             {
-                CurrentPage = pageIndex.Value,
-                TotalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10),
+                CurrentPage = currentPage,
+                TotalPages = totalPages,
                 ActionName = "Details",
                 ControllerName = "PriceLists",
                 RouteValues = new Dictionary<string, string>
@@ -144,7 +149,7 @@ public class PriceListsController : Controller
         ];
 
         model.Products = await productsQuery
-            .Skip((pageIndex.Value - 1) * 10)
+            .Skip((currentPage - 1) * 10)
             .Take(10)
             .AsNoTracking()
             .Select(x => new ProductViewIndexModel
@@ -173,13 +178,16 @@ public class PriceListsController : Controller
             IsDesc = isDesc
         });
 
+        var totalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10);
+        var currentPage = pageIndex.Value <= totalPages ? pageIndex.Value : totalPages;
+
         var result = new
         {
             Products = await productsQuery
                 .Include(x => x.ColumnValues)
                 .ThenInclude(x => x.Column)
                 .AsNoTracking()
-                .Skip((pageIndex.Value - 1) * 10)
+                .Skip((currentPage - 1) * 10)
                 .Take(10)
                 .Select(x => new ProductDetailModel
                 {
@@ -189,7 +197,7 @@ public class PriceListsController : Controller
                     Columns = x.ColumnValues.Select(x => new ProductColumnDetailModel
                     {
                         ColumnId = x.ColumnId,
-                        Value = x.Value ?? "NAN",
+                        Value = x.Value,
                     })
                 })
                 .ToListAsync(),
@@ -197,8 +205,8 @@ public class PriceListsController : Controller
             {
                 ActionName = "Details",
                 ControllerName = "PriceLists",
-                CurrentPage = pageIndex ?? 1,
-                TotalPages = (int)Math.Ceiling((double)await productsQuery.CountAsync() / 10),
+                CurrentPage = currentPage,
+                TotalPages = totalPages,
                 RouteValues = new Dictionary<string, string>
                 {
                     {
@@ -235,8 +243,7 @@ public class PriceListsController : Controller
         if (!ModelState.IsValid)
         {
             ModelState.AddModelError("", "Заполните все обязательные поля");
-            await CreateViewBagWithExistingColumns();
-            return View(priceList);
+            return BadRequest(ModelState);
         }
 
         try
@@ -249,8 +256,7 @@ public class PriceListsController : Controller
         catch (Exception e)
         {
             ModelState.AddModelError($"Ошибка при создании прайс листа: {priceList.Name}", e.Message);
-            await CreateViewBagWithExistingColumns();
-            return View(priceList);
+            return BadRequest(ModelState);
         }
     }
 
@@ -267,6 +273,7 @@ public class PriceListsController : Controller
         {
             return NotFound();
         }
+
         return View(priceList);
     }
 

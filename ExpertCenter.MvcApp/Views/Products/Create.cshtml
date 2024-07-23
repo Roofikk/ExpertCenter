@@ -62,7 +62,7 @@
                                        class="form-control" />
                                 break;
                         }
-                        <span asp-validation-for="Columns[@i].ColumnValue" class="text-danger"></span>
+                        <span asp-validation-for="Columns[@i].Value" class="text-danger"></span>
                     </div>
                 }
             </div>
@@ -84,29 +84,29 @@
             var isValid = true;
 
             $('#otherColumns .form-group').each(function () {
-                var input = $(this).find('input');
+                var numericInput = $(this).find('input[type="number"]');
+                var textInput = $(this).find('input[type="text"]');
                 var textarea = $(this).find('textarea');
-                var span = $(this).find('span');
+                var span = $(this).find('span[class*="text-danger"]');
 
-                if (input.val() === '' || textarea.val() === '') {
+                if (numericInput.length > 0 && (numericInput.val() == '' || isNaN(numericInput.val()))) {
                     isValid = false;
-                    span.text('Поле обязательно для заполнения');
+                    span.text("Поле обязательно для заполнения");
                 }
-
-                if (input.val() !== undefined) {
-                    if (input.val().length > input.attr('maxlength')) {
-                        isValid = false;
-                        span.text('Слишком длинное значение');
-                    }
+                if (textInput.length > 0 && textInput.val().trim() == '') {
+                    isValid = false;
+                    span.text("Поле обязательно для заполнения");
+                }
+                if (textarea.length > 0 && textarea.val().trim() == '') {
+                    isValid = false;
+                    span.text("Поле обязательно для заполнения");
                 }
             });
 
-            console.log(isValid);
             return isValid;
         }
 
         $(document).ready(() => {
-            console.log('ready');
             $('form').submit(function (e) {
                 if (!validateColumns()) {
                     e.preventDefault();

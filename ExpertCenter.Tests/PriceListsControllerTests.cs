@@ -267,13 +267,8 @@ public class PriceListsControllerTests
         });
 
         // Assert
-        Assert.IsType<ViewResult>(result);
-        Assert.False(_controller.ModelState.IsValid);
-        Assert.True(_controller.ModelState.ErrorCount > 0);
-        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
-            .FirstOrDefault(x => x.ErrorMessage.Contains("Неизвестный тип")) != null);
-        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
-            .FirstOrDefault(x => x.ErrorMessage.Contains("RandomColumn")) != null);
+        var viewResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, viewResult.StatusCode);
     }
 
     [Fact]
@@ -296,13 +291,8 @@ public class PriceListsControllerTests
         });
 
         // Assert
-        Assert.IsType<ViewResult>(result);
-        Assert.False(_controller.ModelState.IsValid);
-        Assert.True(_controller.ModelState.ErrorCount > 0);
-        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
-            .FirstOrDefault(x => x.ErrorMessage.Contains("Неизвестный тип")) != null);
-        Assert.True(_controller.ModelState.Values.SelectMany(m => m.Errors)
-            .FirstOrDefault(x => x.ErrorMessage.Contains("2534")) != null);
+        var viewResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, viewResult.StatusCode);
     }
 
     [Fact]

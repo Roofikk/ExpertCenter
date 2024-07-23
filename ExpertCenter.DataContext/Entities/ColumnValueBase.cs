@@ -7,7 +7,7 @@ public abstract class ColumnValueBase
     public int ProductId { get; set; }
     public int ColumnId { get; set; }
 
-    public string? Value
+    public string Value
     {
         get
         {
@@ -16,7 +16,7 @@ public abstract class ColumnValueBase
                 nameof(IntColumn) => ((IntColumn)this).Value.ToString(),
                 nameof(VarCharColumn) => ((VarCharColumn)this).Value,
                 nameof(StringTextColumn) => ((StringTextColumn)this).Value,
-                _ => null
+                _ => throw new InvalidOperationException()
             };
         }
     }

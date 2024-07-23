@@ -150,7 +150,7 @@
                 var input = $(this).find('input');
                 var span = $(this).find('span');
 
-                if (input.val() === '' || input.val().length > 50) {
+                if (input.length > 0 && (input.val().trim() === '' || input.val().length > 50)) {
                     isValid = false;
                     span.text('Поле обязательно для заполнения');
                 }

@@ -32,6 +32,11 @@ connection.on("ReceiveProducts", function (response) {
         success: function (data) {
             //console.log(data);
             fillData(data);
+            overridePaginationLinks(
+                currentPriceListId,
+                data.paginationBarModel.currentPage,
+                routeValues?.sortBy ?? "default",
+                routeValues?.isDesc ?? false);
         },
         error: function (xhr, status, error) {
             console.log(xhr.responseText);
@@ -71,4 +76,9 @@ function fillData(data) {
 
         tableBody.append(row);
     });
+}
+
+function reworkPaginationBar(pgData) {
+    var paginationBar = $('#paginationBar');
+
 }

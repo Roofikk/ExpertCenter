@@ -50,7 +50,7 @@ public class ProductsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ModelState.AddModelError("Некорректное значение", ModelState.Values.SelectMany(x => x.Errors).First().ErrorMessage);
+            ModelState.AddModelError(string.Empty, ModelState.Values.SelectMany(x => x.Errors).First().ErrorMessage);
             return View(product);
         }
 
