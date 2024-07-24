@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpertCenter.DataContext;
 
+/// <summary>
+/// Code First через EF Core миграции
+/// </summary>
 public class ExpertCenterContext : DbContext
 {
     public DbSet<ColumnType> ColumnTypes { get; set; }
