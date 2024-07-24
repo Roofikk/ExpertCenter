@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
-namespace ExpertCenter.Tests;
+namespace ExpertCenter.Tests.Unit;
 
 public class ProductsControllerTests
 {
