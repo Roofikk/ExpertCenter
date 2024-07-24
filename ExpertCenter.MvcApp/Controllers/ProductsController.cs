@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using ExpertCenter.DataContext;
 using ExpertCenter.MvcApp.Models.Column;
-using ExpertCenter.MvcApp.Models.Product;
 using ExpertCenter.MvcApp.Services.Products;
 
 namespace ExpertCenter.MvcApp.Controllers;
@@ -34,6 +33,7 @@ public class ProductsController : Controller
         return View(new ProductCreateModel
         {
             PriceListId = priceListId.Value,
+            Article = await _productsService.GetRandomArticleAsync(priceListId.Value) ?? 0,
             Columns = columns.Select(x => new ProductCreateColumnModel
             {
                 ColumnId = x.Id,
@@ -43,20 +43,20 @@ public class ProductsController : Controller
         });
     }
 
+    // POST: Products/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProductCreateModel product)
     {
         if (!ModelState.IsValid)
         {
-            ModelState.AddModelError($"Columns", "Некорректное значение");
+            ModelState.AddModelError(string.Empty, ModelState.Values.SelectMany(x => x.Errors).First().ErrorMessage);
             return View(product);
         }
 
-        if (await _context.Products.AnyAsync(x => x.PriceListId == product.PriceListId && x.Article == product.Article))
+        if (!await _context.PriceLists.AnyAsync(x => x.PriceListId == product.PriceListId))
         {
-            ModelState.AddModelError("Article", "Такой артикул уже существует");
-            return View(product);
+            return NotFound("Несуществующий прайс-лист");
         }
 
         try
@@ -65,8 +65,7 @@ public class ProductsController : Controller
         }
         catch (Exception e)
         {
-            ModelState.AddModelError($"Ошибка при создании товара: {product.ProductName}", e.Message);
-            return View(product);
+            return NotFound(e.Message);
         }
 
         await _context.SaveChangesAsync();
@@ -74,59 +73,23 @@ public class ProductsController : Controller
     }
 
     // GET: Products/Delete/5
-    public async Task<IActionResult> Delete(int? id)
+    [HttpGet]
+    public async Task<IActionResult> Delete(int id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var product = await _context.Products
-            .Include(p => p.PriceList)
-            .Select(x => new ProductDeleteModel
-            {
-                ProductId = x.ProductId,
-                ProductName = x.Name,
-                PriceListName = x.PriceList.Name
-            })
-            .FirstOrDefaultAsync(m => m.ProductId == id);
+        var product = await _context.Products.FindAsync(id);
 
         if (product == null)
         {
             return NotFound();
         }
 
-        return PartialView("Product/_Delete", product);
-    }
-
-    // POST: Products/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(ProductDeleteModel model)
-    {
-        if (!await _context.Products.AnyAsync(x => x.ProductId == model.ProductId))
-        {
-            return NotFound();
-        }
-
-        await _context.Products.Where(x => x.ProductId == model.ProductId).ExecuteDeleteAsync();
+        _context.Products.Remove(product);
 
         if (_context.ChangeTracker.HasChanges())
         {
             await _context.SaveChangesAsync();
         }
 
-        return RedirectToAction("Details", "PriceLists", new
-        {
-            id = model.PriceListId,
-            pageIndex = model.PageIndex,
-            sortBy = model.SortByModel?.ColumnId ?? "default",
-            isDesc = model.SortByModel?.IsDesc ?? false
-        });
-    }
-
-    private bool ProductExists(int id)
-    {
-        return _context.Products.Any(e => e.ProductId == id);
+        return NoContent();
     }
 }

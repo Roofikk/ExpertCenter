@@ -6,6 +6,7 @@ namespace ExpertCenter.MvcApp.Services.Products;
 
 public interface IProductsService
 {
-    public Task<IQueryable<Product>> GetProductsAsync(int? priceListId = null, SortByModel? sortBy = null);
+    public Task<int?> GetRandomArticleAsync(int priceListId);
+    public Task<IQueryable<Product>> GetProductsQueryAsync(int? priceListId = null, SortByModel? sortBy = null);
     public Task<Product> CreateAsync(ProductCreateModel model);
 }

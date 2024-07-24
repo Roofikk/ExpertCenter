@@ -2,9 +2,9 @@
 using ExpertCenter.DataContext.Entities;
 using ExpertCenter.MvcApp.Models;
 using ExpertCenter.MvcApp.Models.Column;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using ExpertCenter.MvcApp.Models.PriceList;
+using ExpertCenter.MvcApp.Models.Product;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 
 namespace ExpertCenter.MvcApp.Services.Products;
 
@@ -17,7 +17,24 @@ public class ProductsService : IProductsService
         _context = context;
     }
 
-    public async Task<IQueryable<Product>> GetProductsAsync(int? priceListId = null, SortByModel? sortBy = null)
+    public async Task<int?> GetRandomArticleAsync(int priceListId)
+    {
+        int amountTries = 10;
+
+        while (amountTries-- > 0)
+        {
+            var randomArticle = new Random().Next(0, int.MaxValue);
+
+            if (!await _context.Products.AnyAsync(x => x.Article == randomArticle && x.PriceListId == priceListId))
+            {
+                return randomArticle;
+            }
+        }
+
+        return null;
+    }
+
+    public async Task<IQueryable<Product>> GetProductsQueryAsync(int? priceListId = null, SortByModel? sortBy = null)
     {
         var query = _context.Products
             .Where(x => x.PriceListId == priceListId);
@@ -100,6 +117,11 @@ public class ProductsService : IProductsService
 
     public async Task<Product> CreateAsync(ProductCreateModel model)
     {
+        if (await _context.Products.AnyAsync(x => x.Article == model.Article && x.PriceListId == model.PriceListId))
+        {
+            throw new ArgumentException("Нельзя создать товар с уже существующим артикулом", $"{nameof(model.Article)}: {model.Article}");
+        }
+
         var createdProduct = new Product
         {
             PriceListId = model.PriceListId,
@@ -107,7 +129,23 @@ public class ProductsService : IProductsService
             Article = model.Article,
         };
 
-        foreach (var column in model.Columns)
+        var existingColumns = await _context.Columns
+            .Where(x => x.PriceLists.Select(y => y.PriceListId).Any(id => id == model.PriceListId))
+            .ToListAsync();
+
+        var group = model.Columns.Join(existingColumns, x => x.ColumnId, y => y.Id, (x, y) => new
+        {
+            x.ColumnId,
+            y.ColumnTypeId,
+            x.Value,
+        }).ToList();
+
+        if (group.Count != existingColumns.Count)
+        {
+            throw new ArgumentException("Неверные типы данных", nameof(model.Columns));
+        }
+
+        foreach (var column in group)
         {
             switch (column.ColumnTypeId)
             {

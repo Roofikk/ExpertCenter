@@ -1,15 +1,19 @@
 using ExpertCenter.DataContext;
-using ExpertCenter.DataContext.Entities;
+using ExpertCenter.MvcApp.Hubs;
 using ExpertCenter.MvcApp.Services.PriceLists;
 using ExpertCenter.MvcApp.Services.Products;
+using ExpertCenter.MvcApp.Services.ProductTableDependency;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddExpertCenterContext();
+builder.Services.AddExpertCenterContext(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<IPriceListsService, PriceListsService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<ProductsHub>();
+builder.Services.AddSingleton<ISubscribeProductTableDependency, SubscribeProductTableDependency>();
 
 var app = builder.Build();
 
@@ -31,42 +35,14 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.MapHub<ProductsHub>("/productHub");
+app.Services.SubscribeProductTableDependency(app.Configuration);
+
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ExpertCenterContext>();
-
-    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(IntColumn)))
-    {
-        await context.ColumnTypes.AddAsync(new ColumnType
-        {
-            ColumnTypeId = nameof(IntColumn),
-            DisplayName = "Числовой",
-        });
-    }
-
-    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(VarCharColumn)))
-    {
-        await context.ColumnTypes.AddAsync(new ColumnType
-        {
-            ColumnTypeId = nameof(VarCharColumn),
-            DisplayName = "Однострочный"
-        });
-    }
-
-    if (!await context.ColumnTypes.AnyAsync(c => c.ColumnTypeId == nameof(StringTextColumn)))
-    {
-        await context.ColumnTypes.AddAsync(new ColumnType
-        {
-            ColumnTypeId = nameof(StringTextColumn),
-            DisplayName = "Многострочный"
-        });
-    }
-
-    if (context.ChangeTracker.HasChanges())
-    {
-        await context.SaveChangesAsync();
-    }
+    await context.InitializeAsync();
 });
 
 app.Run();

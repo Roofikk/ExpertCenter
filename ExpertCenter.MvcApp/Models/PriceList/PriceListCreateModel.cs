@@ -5,6 +5,7 @@ namespace ExpertCenter.MvcApp.Models.PriceList;
 
 public class PriceListCreateModel
 {
+    [Required(ErrorMessage = "Поле не может быть пустым")]
     [MaxLength(100, ErrorMessage = "Максимальная длина 100 символов")]
     [Display(Name = "Название")]
     public string Name { get; set; } = null!;
