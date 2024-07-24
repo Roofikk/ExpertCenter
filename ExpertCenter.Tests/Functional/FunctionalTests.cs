@@ -6,7 +6,9 @@ using System.Collections.ObjectModel;
 
 namespace ExpertCenter.Tests.Functional;
 
-// Перед запуском тестов необходимо запустить сайт с помощью Ctrl+F5
+/// <summary>
+/// Перед запуском тестов необходимо запустить сайт с помощью Ctrl+F5
+/// </summary>
 public class FunctionalTests : IDisposable
 {
     private readonly IWebDriver _driver;
