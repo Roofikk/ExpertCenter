@@ -25,7 +25,10 @@ public class PriceListsController : Controller
         _priceListsService = priceListsService;
     }
 
-    // GET: PriceLists
+    /// <summary>
+    /// GET: /PriceLists
+    /// </summary>
+    /// <returns></returns>
     public async Task<IActionResult> Index()
     {
         return View(await _context.PriceLists
@@ -38,7 +41,15 @@ public class PriceListsController : Controller
             }).ToListAsync());
     }
 
-    // GET: PriceLists/Details/5
+    /// <summary>
+    /// GET: PriceLists/Details/5
+    /// </summary>
+    /// <param name="id">ID прайс листа</param>
+    /// <param name="pageIndex">номер страницы</param>
+    /// <param name="sortBy">условие сортировки</param>
+    /// <param name="isDesc">порядок сортировки</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public async Task<IActionResult> Details(int? id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
     {
         pageIndex ??= 1;
@@ -168,6 +179,15 @@ public class PriceListsController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// GET: PriceLists/DetailsRaw/5<br />
+    /// Для предоставления данных в формате JSON при сокетном подключении
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="pageIndex"></param>
+    /// <param name="sortBy"></param>
+    /// <param name="isDesc"></param>
+    /// <returns></returns>
     public async Task<IActionResult> DetailsRaw(int id, int? pageIndex = 1, string? sortBy = "default", bool isDesc = false)
     {
         pageIndex ??= 1;
@@ -235,7 +255,11 @@ public class PriceListsController : Controller
         return View();
     }
 
-    // POST: PriceLists/Create
+    /// <summary>
+    /// POST: PriceLists/Create
+    /// </summary>
+    /// <param name="priceList">модель создания прайс листа</param>
+    /// <returns></returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(PriceListCreateModel priceList)
@@ -260,7 +284,11 @@ public class PriceListsController : Controller
         }
     }
 
-    // GET: PriceLists/Edit/5
+    /// <summary>
+    /// GET: PriceLists/Edit/5
+    /// </summary>
+    /// <param name="id">id прайс листа</param>
+    /// <returns></returns>
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null)
@@ -277,7 +305,13 @@ public class PriceListsController : Controller
         return View(priceList);
     }
 
-    // POST: PriceLists/Edit/5
+    /// <summary>
+    /// POST: PriceLists/Edit/5
+    /// </summary>
+    /// <param name="id">id прайс листа</param>
+    /// <param name="priceList">сущность прайс листа</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("PriceListId,Name")] PriceList priceList)

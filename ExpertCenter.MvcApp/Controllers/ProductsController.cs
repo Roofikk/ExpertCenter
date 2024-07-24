@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using ExpertCenter.DataContext;
 using ExpertCenter.MvcApp.Models.Column;
-using ExpertCenter.MvcApp.Models.Product;
 using ExpertCenter.MvcApp.Services.Products;
 
 namespace ExpertCenter.MvcApp.Controllers;
@@ -44,6 +43,7 @@ public class ProductsController : Controller
         });
     }
 
+    // POST: Products/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProductCreateModel product)
@@ -91,10 +91,5 @@ public class ProductsController : Controller
         }
 
         return NoContent();
-    }
-
-    private bool ProductExists(int id)
-    {
-        return _context.Products.Any(e => e.ProductId == id);
     }
 }

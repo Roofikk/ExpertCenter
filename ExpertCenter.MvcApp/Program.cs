@@ -36,8 +36,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapHub<ProductsHub>("/productHub");
-app.Services.GetService<ISubscribeProductTableDependency>()
-    ?.SubscribeTableDependency(app.Configuration.GetConnectionString("DefaultConnection")!);
+app.Services.SubscribeProductTableDependency(app.Configuration);
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
