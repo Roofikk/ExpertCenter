@@ -1,13 +1,14 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace ExpertCenter.Tests.Functional;
 
 /// <summary>
 /// Перед запуском тестов необходимо запустить сайт с помощью Ctrl+F5
+/// Также хочу учесть, что можно было написать код использования ChromeDriver в using
+/// для избежания утечки памяти и непредвиденных ошибок
 /// </summary>
 public class FunctionalTests : IDisposable
 {
